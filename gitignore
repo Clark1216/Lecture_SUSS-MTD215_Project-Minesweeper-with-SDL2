@@ -1,0 +1,7 @@
+### Intermediate files and output file ###
+*.exe
+*.o
+
+
+### VS code ###
+.vscode
