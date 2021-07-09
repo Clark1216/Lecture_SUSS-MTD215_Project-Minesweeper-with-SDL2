@@ -4,6 +4,9 @@ CC = g++
 #SOURCE_PATH
 SRC_PATH = src
 
+#INCLDUE_PATH
+INC_PATH = include
+
 #BIN_PATH
 BIN_PATH = bin
 
@@ -23,8 +26,8 @@ OBJ_NAME = main.exe
 $(BIN_PATH)\$(OBJ_NAME) : $(BIN_PATH)\main.o $(BIN_PATH)\UI_element.o
 	$(CC) $^ $(LIBRARY_PATHS) $(LINKER_FLAGS) -o $@
 
-$(BIN_PATH)\main.o : $(SRC_PATH)\main.cpp
-	$(CC) -c $^ $(INCLUDE_PATHS) -o $@
+$(BIN_PATH)\main.o : $(SRC_PATH)\main.cpp $(INC_PATH)\UI_element.h
+	$(CC) -c $< $(INCLUDE_PATHS) -o $@
 	
-$(BIN_PATH)\UI_element.o : $(SRC_PATH)\UI_element.cpp
-	$(CC) -c $^ $(INCLUDE_PATHS) -o $@
+$(BIN_PATH)\UI_element.o : $(SRC_PATH)\UI_element.cpp $(INC_PATH)\UI_element.h
+	$(CC) -c $< $(INCLUDE_PATHS) -o $@
