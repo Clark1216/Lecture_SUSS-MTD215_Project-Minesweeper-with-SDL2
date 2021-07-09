@@ -10,7 +10,7 @@ INC_PATH = include
 #BIN_PATH
 BIN_PATH = bin
 
-#INCLUDE_PATHS specifies the additional include paths we'll need
+#INCLUDE_PATHS specifies the main include path and the SDL2 ones
 INCLUDE_PATHS = -I.\mingw_dev_lib\include\SDL2 -I.\include
 
 #LIBRARY_PATHS specifies the additional library paths we'll need
