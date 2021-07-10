@@ -1,5 +1,6 @@
 /*This is an application made using SDL and SDL_ttf*/
 #include <iostream>
+#include <string>
 #include <vector>
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -10,6 +11,26 @@
 //Get index of 2d array
 static int getIndex(int row, int col, int maxCols) {
 	return row * maxCols + col; 
+}
+
+//Load texture for text
+SDL_Texture* loadTextTexture(SDL_Renderer* renderer, TTF_Font* font, const SDL_Color& colour, const char* text) {
+	SDL_Texture* texture = nullptr;
+    SDL_Surface* textSurface = TTF_RenderText_Solid(font, text, colour);
+    if (textSurface == nullptr) {
+        std::cout << "Unable to render text surface! Error: " << TTF_GetError() << std::endl; 
+    } else {
+        texture = SDL_CreateTextureFromSurface(renderer, textSurface);
+        if (texture == nullptr) {
+            std::cout << "Unable to create texture form rendered text! Error: " << SDL_GetError() << std::endl;
+        } 
+        SDL_FreeSurface(textSurface);
+    }
+	return texture;
+}
+
+SDL_Texture* loadImageTexture(SDL_Renderer* renderer, TTF_Font* font, const char* text) {
+	return nullptr;
 }
 
 int main( int argc, char* args[] ) {
@@ -59,15 +80,33 @@ int main( int argc, char* args[] ) {
 	const int CELL_GAP = 4;
 	const int CELL_WIDTH = 35;
 	const int CELL_HEIGHT = CELL_WIDTH;
-	const SDL_Color CELL_COLOUR = {109, 158, 237, 255}; //Sky blue
+	const SDL_Color CELL_COLOUR = {158, 158, 158, 255}; //DARK GREY
+	const SDL_Color PRESSED_CELL_COLOUR = {209, 209, 209, 255}; //LIGHT GREY
 
 	//Load cell font
-	const int CELL_FONT_SIZE = 20;
-	const SDL_Color CELL_FONT_COLOUR = {255, 255, 255, 255}; //White
+	const int CELL_FONT_SIZE = 30;
 	TTF_Font* CELL_FONT = TTF_OpenFont("assets/octin sports free.ttf", CELL_FONT_SIZE);
 	if (font == NULL) {
 		std::cout << "Failed to load cell font! Error: " << TTF_GetError() << std::endl;
 		return -1;
+	}
+
+	//Define colours for all 9 numbers (0-8)
+	const SDL_Color colourOfNumbers[9] = 
+	{{255, 255, 255, 255},  //0 = WHITE
+	 { 20,  57, 168, 255},  //1 = BLUE
+	 { 20, 148,  18, 255},	//2 = GREEN
+	 {179,  30,  30, 255},  //3 = RED
+	 {103,  28, 173, 255},  //4 = PURPLE
+	 {133,  20,  20, 255},  //5 = MAROON
+	 {  9, 179, 164, 255},  //6 = TURQUOISE
+	 {  0,   0,   0, 255},  //7 = BLACK
+	 {255, 255, 255, 255}}; //8 = WHITE
+
+	//Load textures for all 9 numbers (0-8)
+	SDL_Texture* textureOfNumbers[9];
+	for (int i = 0; i < 10; ++i) {
+		textureOfNumbers[i] = loadTextTexture(renderer, CELL_FONT, colourOfNumbers[i], std::to_string(i).c_str());
 	}
 
 	//Starting coordinates
@@ -78,8 +117,8 @@ int main( int argc, char* args[] ) {
 	for (int row = 0; row < MAX_ROWS; ++row) {
 		for (int col = 0; col < MAX_COLS; ++col) {
 			SDL_Rect rect = {x, y, CELL_WIDTH, CELL_HEIGHT};
-			Cell cell(rect, CELL_COLOUR, CELL_FONT, CELL_FONT_COLOUR);
-			cell.loadTexture(renderer, "0");
+			Cell cell(rect, CELL_COLOUR);
+			cell.setTexture(textureOfNumbers[8]);
 			board.push_back(cell);
 			x += CELL_WIDTH + CELL_GAP;
 		}
@@ -121,17 +160,15 @@ int main( int argc, char* args[] ) {
 		//Update screen from backbuffer and clear backbuffer
 		SDL_RenderPresent(renderer);
 
-		//Slow down rendering rate
+		//Slow down program
 		SDL_Delay(20);
 	}
 
 	/*--------------------------------Ending Programme--------------------------------*/
 	//Free textures
-	for (int row = 0; row < MAX_ROWS; ++row) {
-		for (int col = 0; col < MAX_COLS; ++col) {
-			int index = getIndex(row, col, MAX_COLS);
-			board[index].free();
-		}
+	for (int i = 0; i < 10; ++i) {
+		SDL_DestroyTexture(textureOfNumbers[i]);
+		textureOfNumbers[i] = nullptr;
 	}
 
 	//Destroy window and renderer
