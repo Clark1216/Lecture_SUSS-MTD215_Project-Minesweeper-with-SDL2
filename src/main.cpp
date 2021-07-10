@@ -1,15 +1,21 @@
 /*This is an application made using SDL and SDL_ttf*/
-
-//Using SDL and standard IO
 #include <iostream>
+#include <vector>
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include "UI_element.h"
+#include "button.h"
+#include "cell.h"
+
+//Get index of 2d array
+static int getIndex(int row, int col, int maxCols) {
+	return row * maxCols + col; 
+}
 
 int main( int argc, char* args[] ) {
 	//Screen dimension constants
-	const int SCREEN_WIDTH = 640;
-	const int SCREEN_HEIGHT = 480;
+	const int SCREEN_WIDTH = 710;
+	const int SCREEN_HEIGHT = 555;
 
 	//Initialise SDL
 	if(SDL_Init(SDL_INIT_VIDEO) < 0 ) {
@@ -39,18 +45,47 @@ int main( int argc, char* args[] ) {
 
 	//Load font
 	const int fontSize = 30;
+	SDL_Color fontColour = {255, 255, 255, 255}; //Black
 	TTF_Font* font = TTF_OpenFont("assets/octin sports free.ttf", fontSize);
 	if (font == NULL) {
 		std::cout << "Failed to load font! Error: " << TTF_GetError() << std::endl;
 		return -1;
 	}
-	
-	SDL_Rect rect = {100, 100, 200, 50};
-	SDL_Color colour = {109, 158, 237, 255}; //Sky blue
-	SDL_Color fontColour = {255, 255, 255, 255}; //Black
 
-	UI_element element(rect, colour, font, fontColour);
-	element.loadTexture(renderer, "Hello World!");
+	/*------------------------------Create board of cells---------------------------*/
+	//Cell properties
+	const int MAX_ROWS = 14;
+	const int MAX_COLS = 18;
+	const int CELL_GAP = 4;
+	const int CELL_WIDTH = 35;
+	const int CELL_HEIGHT = CELL_WIDTH;
+	const SDL_Color CELL_COLOUR = {109, 158, 237, 255}; //Sky blue
+
+	//Load cell font
+	const int CELL_FONT_SIZE = 20;
+	const SDL_Color CELL_FONT_COLOUR = {255, 255, 255, 255}; //White
+	TTF_Font* CELL_FONT = TTF_OpenFont("assets/octin sports free.ttf", CELL_FONT_SIZE);
+	if (font == NULL) {
+		std::cout << "Failed to load cell font! Error: " << TTF_GetError() << std::endl;
+		return -1;
+	}
+
+	//Starting coordinates
+	int x = CELL_GAP;
+	int y = CELL_GAP;
+	//Create 3x3 cells
+	std::vector<Cell> board;
+	for (int row = 0; row < MAX_ROWS; ++row) {
+		for (int col = 0; col < MAX_COLS; ++col) {
+			SDL_Rect rect = {x, y, CELL_WIDTH, CELL_HEIGHT};
+			Cell cell(rect, CELL_COLOUR, CELL_FONT, CELL_FONT_COLOUR);
+			cell.loadTexture(renderer, "0");
+			board.push_back(cell);
+			x += CELL_WIDTH + CELL_GAP;
+		}
+		x = CELL_GAP;
+		y += CELL_HEIGHT + CELL_GAP;
+	} 
 
 	/*------------------------------------Game Loop---------------------------------*/
 	//Set loop variables
@@ -65,6 +100,10 @@ int main( int argc, char* args[] ) {
 			if (event.type == SDL_QUIT) {
 				exit = true;
 			}
+			//Handle mouse click
+			if (event.type == SDL_MOUSEBUTTONDOWN) {
+
+			}
 		}
 
 		//Clear screen
@@ -72,7 +111,12 @@ int main( int argc, char* args[] ) {
 		SDL_RenderClear(renderer);
 
 		//Render
-		element.render(renderer);
+		for (int row = 0; row < MAX_ROWS; ++row) {
+			for (int col = 0; col < MAX_COLS; ++col) {
+				int index = getIndex(row, col, MAX_COLS);
+				board[index].render(renderer);
+			}
+		}
 
 		//Update screen from backbuffer and clear backbuffer
 		SDL_RenderPresent(renderer);
@@ -83,7 +127,12 @@ int main( int argc, char* args[] ) {
 
 	/*--------------------------------Ending Programme--------------------------------*/
 	//Free textures
-	element.free();
+	for (int row = 0; row < MAX_ROWS; ++row) {
+		for (int col = 0; col < MAX_COLS; ++col) {
+			int index = getIndex(row, col, MAX_COLS);
+			board[index].free();
+		}
+	}
 
 	//Destroy window and renderer
 	SDL_DestroyWindow(window);
