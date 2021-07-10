@@ -9,17 +9,15 @@ class UI_element {
         SDL_Color mColour;
 
         // Texture for text
-        TTF_Font* mFont;
-        SDL_Rect mFontRect;
-        SDL_Color mFontColour;
         SDL_Texture* mTexture;
+        SDL_Rect mTextureRect;
 
         void centerText();
 
     public:
-        UI_element(const SDL_Rect& rect, const SDL_Color& colour, TTF_Font* font, const SDL_Color& fontColour);
+        UI_element(const SDL_Rect& rect, const SDL_Color& colour);
 
-        void loadTexture(SDL_Renderer* renderer, const char* text);
+        void setTexture(SDL_Texture* texture);
         void render(SDL_Renderer* renderer) const;
         void free();
 

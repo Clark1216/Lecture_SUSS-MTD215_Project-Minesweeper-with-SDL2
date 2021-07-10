@@ -7,6 +7,6 @@
 //A Button is a UI_element
 class Button : public UI_element {
     public:
-        Button(const SDL_Rect& rect, const SDL_Color& colour, TTF_Font* const font, const SDL_Color& fontColour);
+        Button(const SDL_Rect& rect, const SDL_Color& colour);
         bool isMouseInside(const int x, const int y) const;
 };

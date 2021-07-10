@@ -1,7 +1,7 @@
 #include "button.h"
 
-Button::Button(const SDL_Rect& rect, const SDL_Color& colour, TTF_Font* const font, const SDL_Color& fontColour)
-    : UI_element(rect, colour, font, fontColour) {
+Button::Button(const SDL_Rect& rect, const SDL_Color& colour)
+    : UI_element(rect, colour) {
 
 }
 

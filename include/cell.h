@@ -9,5 +9,5 @@ class Cell : public Button {
     private:
 
     public:
-        Cell(const SDL_Rect& rect, const SDL_Color& colour, TTF_Font* const font, const SDL_Color& fontColour);
+        Cell(const SDL_Rect& rect, const SDL_Color& colour);
 };
