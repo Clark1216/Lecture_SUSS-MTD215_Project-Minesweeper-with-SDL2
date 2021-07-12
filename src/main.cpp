@@ -9,30 +9,42 @@
 #include "cell.h"
 
 //Get index of 2d array
-static int getIndex(int row, int col, int maxCols) {
+static inline int getIndex(int row, int col, int maxCols) {
 	return row * maxCols + col; 
 }
 
-//Load texture for text
-SDL_Texture* loadTextTexture(SDL_Renderer* renderer, TTF_Font* font, const SDL_Color& colour, const char* text) {
+//A wrapper function for creating texture from surface
+static SDL_Texture* createTextureFromSurface(SDL_Renderer* renderer, SDL_Surface* surface) {
 	SDL_Texture* texture = nullptr;
-    SDL_Surface* textSurface = TTF_RenderText_Solid(font, text, colour);
-    if (textSurface == nullptr) {
+	 if (surface == nullptr) {
         std::cout << "Unable to render text surface! Error: " << TTF_GetError() << std::endl; 
     } else {
-        texture = SDL_CreateTextureFromSurface(renderer, textSurface);
+        texture = SDL_CreateTextureFromSurface(renderer, surface);
         if (texture == nullptr) {
             std::cout << "Unable to create texture form rendered text! Error: " << SDL_GetError() << std::endl;
         } 
-        SDL_FreeSurface(textSurface);
+        SDL_FreeSurface(surface);
     }
 	return texture;
 }
 
-SDL_Texture* loadImageTexture(SDL_Renderer* renderer, TTF_Font* font, const char* text) {
-	return nullptr;
+//Load texture for text
+static SDL_Texture* loadTexture(SDL_Renderer* renderer, TTF_Font* font, const SDL_Color& colour, const char* text) {
+    SDL_Surface* surface = TTF_RenderText_Solid(font, text, colour);
+	//Return loaded texture if successfull otherwise a nullptr
+	return createTextureFromSurface(renderer, surface);
 }
 
+//Load texture from bmp (function overriding)
+static SDL_Texture* loadTexture(SDL_Renderer* renderer, const char* relativePath) {
+	SDL_Surface* surface = SDL_LoadBMP(relativePath);
+	// make white pixel transparent
+	SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, 255, 255, 255));
+	//Return loaded texture if successfull otherwise a nullptr
+	return createTextureFromSurface(renderer, surface);
+}
+
+//SDL requires c style paramaters in the main function
 int main( int argc, char* args[] ) {
 	//Screen dimension constants
 	const int SCREEN_WIDTH = 710;
@@ -93,7 +105,7 @@ int main( int argc, char* args[] ) {
 
 	//Define colours for all 9 numbers (0-8)
 	const SDL_Color colourOfNumbers[9] = 
-	{{255, 255, 255, 255},  //0 = WHITE
+	{{255, 255, 255, 255},  //0 = WHITE // wont be used but keep to make index make sense
 	 { 20,  57, 168, 255},  //1 = BLUE
 	 { 20, 148,  18, 255},	//2 = GREEN
 	 {179,  30,  30, 255},  //3 = RED
@@ -106,19 +118,22 @@ int main( int argc, char* args[] ) {
 	//Load textures for all 9 numbers (0-8)
 	SDL_Texture* textureOfNumbers[9];
 	for (int i = 0; i < 10; ++i) {
-		textureOfNumbers[i] = loadTextTexture(renderer, CELL_FONT, colourOfNumbers[i], std::to_string(i).c_str());
+		textureOfNumbers[i] = loadTexture(renderer, CELL_FONT, colourOfNumbers[i], std::to_string(i).c_str());
 	}
+
+	//Load flag texture
+	SDL_Texture* flagTexture = loadTexture(renderer, "assets/flag.bmp");
 
 	//Starting coordinates
 	int x = CELL_GAP;
 	int y = CELL_GAP;
-	//Create 3x3 cells
+	//Create cells
 	std::vector<Cell> board;
 	for (int row = 0; row < MAX_ROWS; ++row) {
 		for (int col = 0; col < MAX_COLS; ++col) {
 			SDL_Rect rect = {x, y, CELL_WIDTH, CELL_HEIGHT};
 			Cell cell(rect, CELL_COLOUR);
-			cell.setTexture(textureOfNumbers[8]);
+			cell.setTexture(flagTexture);
 			board.push_back(cell);
 			x += CELL_WIDTH + CELL_GAP;
 		}
