@@ -1,1 +1,1 @@
-*.c linguist-detectable=false
+mingw_dev_lib/include/SDL2/*.h linguist-detectable=false
