@@ -8,10 +8,10 @@ UI_element::UI_element(const SDL_Rect& rect, const SDL_Color& colour)
 void UI_element::setTexture(SDL_Texture* texture) {
     mTexture = texture;
     SDL_QueryTexture(texture, NULL, NULL, &mTextureRect.w, &mTextureRect.h);
-    centerText();
+    centerTexture();
 }
 
-void UI_element::centerText() {
+void UI_element::centerTexture() {
     // Center text on UI_element
     mTextureRect.y = mRect.y + 0.5 * (mRect.h - mTextureRect.h);
 	mTextureRect.x = mRect.x + 0.5 * (mRect.w - mTextureRect.w);
