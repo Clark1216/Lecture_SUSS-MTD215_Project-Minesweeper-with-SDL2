@@ -11,20 +11,20 @@
 #include "button.h"
 #include "cell.h"
 
-//Get index of 2d array
+//Get index of 1d array from 2d arguments
 static inline int getIndex(int row, int col, int maxCols) {
 	return row * maxCols + col; 
 }
 
 //SDL requires c style paramaters in the main function
 int main( int argc, char* args[] ) {
-	//Screen dimension constants
-	const int SCREEN_WIDTH = 710;
-	const int SCREEN_HEIGHT = 555;
+	//Screen dimension
+	const int SCREEN_WIDTH = 706;
+	const int SCREEN_HEIGHT = 550;
 
 	//Initialise SDL
 	if(SDL_Init(SDL_INIT_VIDEO) < 0 ) {
-		std::cout << "SDL could not initialise! SDL_Error: " << SDL_GetError();
+		std::cout << "SDL could not initialise! SDL_Error: " << SDL_GetError() << std::endl;
 		return -1;
 	}
 
@@ -37,7 +37,7 @@ int main( int argc, char* args[] ) {
 	//Create window
 	SDL_Window* window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 	if (window == NULL) {
-		std::cout << "Window could not be created! SDL_Error: " << SDL_GetError();
+		std::cout << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
 		return -1;
 	}
 
@@ -77,7 +77,7 @@ int main( int argc, char* args[] ) {
 
 	//Define colours for all 9 numbers (0-8)
 	const SDL_Color colourOfNumbers[9] = 
-	{{255, 255, 255, 255},  //0 = WHITE // wont be used but keep to make index make sense
+	{{  0,   0,   0,   0},  //0 = Nothing (wont be used but kept to make index make more sense)
 	 { 20,  57, 168, 255},  //1 = BLUE
 	 { 20, 148,  18, 255},	//2 = GREEN
 	 {179,  30,  30, 255},  //3 = RED
@@ -89,12 +89,21 @@ int main( int argc, char* args[] ) {
 
 	//Load textures for all 9 numbers (0-8)
 	SDL_Texture* textureOfNumbers[9];
-	for (int i = 0; i < 10; ++i) {
+	//0 Does not have a texture
+	textureOfNumbers[0] = nullptr;
+	for (int i = 1; i < 9; ++i) {
 		textureOfNumbers[i] = loadTexture(renderer, CELL_FONT, colourOfNumbers[i], std::to_string(i).c_str());
 	}
-
-	//Load flag texture
+	//Load flag and bomb texture
 	SDL_Texture* flagTexture = loadTexture(renderer, "assets/flag.bmp");
+	SDL_Texture* bombTexture = loadTexture(renderer, "assets/bomb.bmp");
+
+	//Set colours and textures in Cell class
+	Cell::sCellColour = CELL_COLOUR;
+	Cell::sPressedCellColour = PRESSED_CELL_COLOUR;
+	Cell::sTextureOfNumbers = textureOfNumbers;
+	Cell::sFlagTexture = flagTexture;
+	Cell::sBombTexture = bombTexture;
 
 	//Starting coordinates
 	int x = CELL_GAP;
@@ -105,13 +114,15 @@ int main( int argc, char* args[] ) {
 		for (int col = 0; col < MAX_COLS; ++col) {
 			SDL_Rect rect = {x, y, CELL_WIDTH, CELL_HEIGHT};
 			Cell cell(rect, CELL_COLOUR);
-			cell.setTexture(flagTexture);
 			board.push_back(cell);
 			x += CELL_WIDTH + CELL_GAP;
 		}
 		x = CELL_GAP;
 		y += CELL_HEIGHT + CELL_GAP;
-	} 
+	}
+
+	/*------------------------------Generate random bombs---------------------------*/
+	//For our medium size mode we will use
 
 	/*------------------------------------Game Loop---------------------------------*/
 	//Set loop variables
@@ -155,8 +166,9 @@ int main( int argc, char* args[] ) {
 	//Free textures
 	for (int i = 0; i < 10; ++i) {
 		SDL_DestroyTexture(textureOfNumbers[i]);
-		textureOfNumbers[i] = nullptr;
 	}
+	SDL_DestroyTexture(flagTexture);
+	SDL_DestroyTexture(bombTexture);
 
 	//Destroy window and renderer
 	SDL_DestroyWindow(window);
