@@ -1,4 +1,4 @@
-/*This is an application made using SDL and SDL_ttf*/
+/*A Minesweeper made made using SDL and SDL_ttf*/
 #include <iostream>
 #include <string>
 #include <vector>
@@ -19,13 +19,43 @@ static inline int getIndex(int row, int col, int maxCols) {
 	return row * maxCols + col; 
 }
 
+//Return true if valid index
+static inline bool validIndex(int row, int col, int maxRows, int maxCols) {
+	return row > -1 && col > -1 && row < maxRows && col < maxCols;
+}
+
+//Recursive function to open (expand) board
+void openBoard(std::vector<Cell>& board, int row, int col, int maxRows, int maxCols) {
+	// for each neighbouring cell
+	for (int deltaRow = -1; deltaRow < 2; deltaRow++) {
+		for (int deltaCol = -1; deltaCol < 2; deltaCol++) {
+			int tempRow = row + deltaRow;
+			int tempCol = col + deltaCol;
+			if (validIndex(tempRow, tempCol, maxRows, maxCols)) {
+				int tempIndex = getIndex(tempRow, tempCol, maxCols);
+				Cell& tempCell = board[tempIndex];
+				if (!tempCell.isOpen()) {
+					if (tempCell.numberPlanted()) {
+						tempCell.open();
+					} else if (tempCell.bombPlanted()) {
+						return;
+					} else {
+						tempCell.open();
+						openBoard(board, tempRow, tempCol, maxRows, maxCols);
+					}
+				} 
+			}
+		}
+	}
+}
+
 //SDL requires c style paramaters in the main function
 int main( int argc, char* args[] ) {
 	/*------------------------------------Initialise--------------------------------*/
 	//Screen dimension
 	const int SCREEN_WIDTH = 706;
 	const int SCREEN_HEIGHT = 550;
-	
+
 	//Initialise SDL
 	if(SDL_Init(SDL_INIT_VIDEO) < 0 ) {
 		std::cout << "SDL could not initialise! SDL_Error: " << SDL_GetError() << std::endl;
@@ -39,7 +69,7 @@ int main( int argc, char* args[] ) {
 	}
 
 	//Create window
-	SDL_Window* window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+	SDL_Window* window = SDL_CreateWindow("Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 	if (window == NULL) {
 		std::cout << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
 		return -1;
@@ -81,7 +111,8 @@ int main( int argc, char* args[] ) {
 	}
 
 	//Define colours for all 9 numbers (0-8)
-	const SDL_Color colourOfNumbers[9] = 
+	const int COLOUR_COUNT = 9;
+	const SDL_Color colourOfNumbers[COLOUR_COUNT] = 
 	{{  0,   0,   0,   0},  //0 = Nothing (wont be used but kept to make index make more sense)
 	 { 20,  57, 168, 255},  //1 = BLUE
 	 { 20, 148,  18, 255},	//2 = GREEN
@@ -126,7 +157,7 @@ int main( int argc, char* args[] ) {
 		y += CELL_HEIGHT + CELL_GAP;
 	}
 
-	/*------------------------------Generate random bombs---------------------------*/
+	/*--------------------------------Plant random bombs----------------------------*/
 	//For our medium size mode we will use 40 bombs
 	//Create array with same size as board and hold the index in each element
 	const int NUMBER_OF_BOMBS = 40;
@@ -146,10 +177,41 @@ int main( int argc, char* args[] ) {
 		board[randomIndex].plantBomb();
 	}
 
+	/*-----------------------------------Plant numbers------------------------------*/
+	//Plant numbers in cells based on how many bombs there are in an 3 x 3 area
+	//(Not including bombs)
+	for (int row = 0; row < MAX_ROWS; ++row) {
+		for (int col = 0; col < MAX_COLS; ++col) {
+			int index = getIndex(row, col, MAX_COLS);
+			if (!board[index].bombPlanted()) {
+				//Search bombs in a 3 x 3 area
+				int bombsFound = 0;
+				for (int deltaRow = -1; deltaRow < 2; ++deltaRow) {
+					for (int deltaCol = -1; deltaCol < 2; ++deltaCol) {
+						int tempRow = row + deltaRow;
+						int tempCol = col + deltaCol;
+						if (validIndex(tempRow, tempCol, MAX_ROWS, MAX_COLS)) {
+							int tempIndex = getIndex(row + deltaRow, col + deltaCol, MAX_COLS);
+							if (board[tempIndex].bombPlanted()) {
+								bombsFound++;
+							}
+						}
+					}
+				}
+				board[index].plantNumber(bombsFound);
+			}
+		}
+	}
+
 	/*------------------------------------Game Loop---------------------------------*/
+	//Track game state
+	enum GameState {MENU, PLAYING, LOSE, WIN};
+
 	//Set loop variables
 	bool exit = false;
 	SDL_Event event;
+	int mouseX, mouseY = 0;
+	GameState gameState = PLAYING;
 
 	//Main game loop
 	while (!exit) {
@@ -161,8 +223,39 @@ int main( int argc, char* args[] ) {
 			}
 			//Handle mouse click
 			if (event.type == SDL_MOUSEBUTTONDOWN) {
-
+				SDL_GetMouseState(&mouseX, &mouseY);
+				//Handle left mouse click
+				if (event.button.button == SDL_BUTTON_LEFT) {
+					for (int row = 0; row < MAX_ROWS; ++row) {
+						for (int col = 0; col < MAX_COLS; ++col) {
+							int index = getIndex(row, col, MAX_COLS);
+							Cell& cell = board[index];
+							if (cell.isMouseInside(mouseX, mouseY)) {
+								cell.open();
+								if (cell.bombPlanted()) {
+									gameState = LOSE;
+								} else if (!cell.numberPlanted()) {
+									//Press neighboring cells if they do not have bombs or numbers
+									openBoard(board, row, col, MAX_ROWS, MAX_COLS);
+								}
+								break;
+							}
+						}
+					}
+				//Handle right mouse click
+				} else if (event.button.button == SDL_BUTTON_RIGHT) {
+					for (Cell& cell : board) {
+						if (cell.isMouseInside(mouseX, mouseY)) {
+							cell.setFlag();
+						}
+					}
+				}
 			}
+		}
+
+		if (gameState == LOSE) {
+			std::cout << "BOMB FOUND: YOU HAVE LOST!" << std::endl;
+			gameState = PLAYING;
 		}
 
 		//Clear screen
@@ -170,11 +263,8 @@ int main( int argc, char* args[] ) {
 		SDL_RenderClear(renderer);
 
 		//Render
-		for (int row = 0; row < MAX_ROWS; ++row) {
-			for (int col = 0; col < MAX_COLS; ++col) {
-				int index = getIndex(row, col, MAX_COLS);
-				board[index].render(renderer);
-			}
+		for (Cell& cell : board) {
+			cell.render(renderer);
 		}
 
 		//Update screen from backbuffer and clear backbuffer
@@ -186,8 +276,8 @@ int main( int argc, char* args[] ) {
 
 	/*--------------------------------Ending Programme--------------------------------*/
 	//Free textures
-	for (int i = 0; i < 10; ++i) {
-		SDL_DestroyTexture(textureOfNumbers[i]);
+	for (SDL_Texture* texture : textureOfNumbers) {
+		SDL_DestroyTexture(texture);
 	}
 	SDL_DestroyTexture(flagTexture);
 	SDL_DestroyTexture(bombTexture);
