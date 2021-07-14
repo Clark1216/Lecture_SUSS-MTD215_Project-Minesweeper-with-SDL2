@@ -16,13 +16,20 @@ class Cell : public Button {
     private:
         bool mBomb;
         int mNumber;
-        bool mPressed;
+        bool mOpen;
         bool mFlag;
 
     public:
         Cell(const SDL_Rect& rect, const SDL_Color& colour);
+        
+        //Setters
         void plantBomb();
         void plantNumber(int number);
-        void setPressed();
+        void open();
         void setFlag();
+
+        //Getters
+        bool isOpen();
+        bool bombPlanted();
+        bool numberPlanted();
 };
