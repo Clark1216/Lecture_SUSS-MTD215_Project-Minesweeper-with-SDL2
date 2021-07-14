@@ -2,6 +2,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <random>
+#include <chrono>
 
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -18,10 +21,11 @@ static inline int getIndex(int row, int col, int maxCols) {
 
 //SDL requires c style paramaters in the main function
 int main( int argc, char* args[] ) {
+	/*------------------------------------Initialise--------------------------------*/
 	//Screen dimension
 	const int SCREEN_WIDTH = 706;
 	const int SCREEN_HEIGHT = 550;
-
+	
 	//Initialise SDL
 	if(SDL_Init(SDL_INIT_VIDEO) < 0 ) {
 		std::cout << "SDL could not initialise! SDL_Error: " << SDL_GetError() << std::endl;
@@ -61,6 +65,7 @@ int main( int argc, char* args[] ) {
 	//Cell properties
 	const int MAX_ROWS = 14;
 	const int MAX_COLS = 18;
+	const int MAX_SIZE = MAX_ROWS * MAX_COLS;
 	const int CELL_GAP = 4;
 	const int CELL_WIDTH = 35;
 	const int CELL_HEIGHT = CELL_WIDTH;
@@ -122,7 +127,24 @@ int main( int argc, char* args[] ) {
 	}
 
 	/*------------------------------Generate random bombs---------------------------*/
-	//For our medium size mode we will use
+	//For our medium size mode we will use 40 bombs
+	//Create array with same size as board and hold the index in each element
+	const int NUMBER_OF_BOMBS = 40;
+	int array[MAX_SIZE];
+	for (int i = 0; i < MAX_SIZE; ++i) {
+		array[i] = i;
+	}
+
+	//Obtain a time-based seed
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	//Shuffle array
+	std::shuffle(&array[0], &array[MAX_SIZE], std::default_random_engine(seed));
+
+	//Use shuffled array to plant bombs on the board
+	for (int i = 0; i < NUMBER_OF_BOMBS; ++i) {
+		int randomIndex = array[i];
+		board[randomIndex].plantBomb();
+	}
 
 	/*------------------------------------Game Loop---------------------------------*/
 	//Set loop variables
