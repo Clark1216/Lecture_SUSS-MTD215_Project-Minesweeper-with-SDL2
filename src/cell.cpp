@@ -15,7 +15,7 @@ void Cell::plantBomb() {
     mBomb = true;
 }
 
-void Cell::plantNumber(int number) {
+void Cell::plantNumber(const int number) {
     mNumber = number;
 }
 

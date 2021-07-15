@@ -24,7 +24,7 @@ class Cell : public Button {
         
         //Setters
         void plantBomb();
-        void plantNumber(int number);
+        void plantNumber(const int number);
         void open();
         void setFlag();
 
