@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include <random>
 #include <chrono>
 
@@ -24,31 +25,51 @@ static inline bool validIndex(const int row, const int col, const int MAX_ROWS, 
 	return row > -1 && col > -1 && row < MAX_ROWS && col < MAX_COLS;
 }
 
-//Generate the bombs on the board on the first click and don't place any bombs within a 3 x 3 area of the clicked cell
-static void generateBombs(std::vector<Cell>& board, const int firstRow, const int firstCol, const int MAX_ROWS, const int MAX_COLS) {
+//For each neighbour around the chosen cell
+static void forEachNeighbour(const std::function<void(const int, const int)>& func) {
+	for (int deltaRow = -1; deltaRow < 2; ++deltaRow) {
+		for (int deltaCol = -1; deltaCol < 2; ++deltaCol) {
+			func(deltaRow, deltaCol);
+		}
+	}
+}
+
+//For each cell on the board, do something to it
+static void forEachCell(const std::function<void(const int, const int)>& func, const int MAX_ROWS, const int MAX_COLS) {
+	//Loop throw rows and cols of board
+	for (int row = 0; row < MAX_ROWS; ++row) {
+		for (int col = 0; col < MAX_COLS; ++col) {
+			func(row, col);
+		}
+	}
+}
+
+//Generate the bombs (mines) on the board on the first click and don't place any bombs within a 3 x 3 area of the clicked cell
+static void generateBombs(std::vector<Cell>& board, const int firstClickedRow, const int firstClickedCol, const int MAX_ROWS, const int MAX_COLS) {
 	/*--------------------------------Plant random bombs----------------------------*/
 	//For our medium size mode we will use 40 bombs
 	//Create array with same size as board and hold the index in each element
 	const int NUMBER_OF_BOMBS = 40;
 	std::vector<int> bombGeneratorArray;
 	
-	//Generate bomb array
-	for (int row = 0; row < MAX_ROWS; ++row) {
-		for (int col = 0; col < MAX_COLS; ++col) {
-			//Ignore 3 x 3 area around the first cell clicked (no bombs in this range)
-			if ((row < firstRow - 1) || (row > firstRow + 1) || (col < firstCol - 1) || (col > firstCol + 1)) {
-				int index = getIndex(row, col, MAX_COLS);
-				bombGeneratorArray.push_back(index);
-			} 
-		}
-	}
+	//Create lambda to add to generator array
+	auto addCellIndex = [&](const int row, const int col) {
+		//Ignore 3 x 3 area around the first cell clicked (no bombs in this range)
+		if ((row < firstClickedRow - 1) || (row > firstClickedRow + 1) || (col < firstClickedCol - 1) || (col > firstClickedCol + 1)) {
+			int index = getIndex(row, col, MAX_COLS);
+			bombGeneratorArray.push_back(index);
+		} 
+	};
+
+	//Push back cell index onto generator array
+	forEachCell(addCellIndex, MAX_ROWS, MAX_COLS);
 
 	//Obtain a time-based seed
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-	//Shuffle array
+	//Shuffle bomb array
 	std::shuffle(bombGeneratorArray.begin(), bombGeneratorArray.end(), std::default_random_engine(seed));
 
-	//Use shuffled array to plant bombs on the board
+	//Use shuffled bomb array to plant bombs on the board
 	for (int i = 0; i < NUMBER_OF_BOMBS; ++i) {
 		int randomIndex = bombGeneratorArray[i];
 		board[randomIndex].plantBomb();
@@ -56,29 +77,29 @@ static void generateBombs(std::vector<Cell>& board, const int firstRow, const in
 
 	/*-----------------------------------Plant numbers------------------------------*/
 	//Plant numbers in cells based on how many bombs there are in an 3 x 3 area
-	//(Not including bombs)
-	for (int row = 0; row < MAX_ROWS; ++row) {
-		for (int col = 0; col < MAX_COLS; ++col) {
-			int index = getIndex(row, col, MAX_COLS);
-			if (!board[index].bombPlanted()) {
-				//Search bombs in a 3 x 3 area
-				int bombsFound = 0;
-				for (int deltaRow = -1; deltaRow < 2; ++deltaRow) {
-					for (int deltaCol = -1; deltaCol < 2; ++deltaCol) {
-						int tempRow = row + deltaRow;
-						int tempCol = col + deltaCol;
-						if (validIndex(tempRow, tempCol, MAX_ROWS, MAX_COLS)) {
-							int tempIndex = getIndex(tempRow, tempCol, MAX_COLS);
-							if (board[tempIndex].bombPlanted()) {
-								bombsFound++;
-							}
-						}
+	
+	//Create lamda to plant number of bombs around cell
+	auto plantNumber = [&](const int row, const int col) {
+		int index = getIndex(row, col, MAX_COLS);
+		if (!board[index].bombPlanted()) {
+			//Search bombs in a 3 x 3 area
+			int bombsFound = 0;
+			forEachNeighbour([&](const int deltaRow, const int deltaCol) {
+				int tempRow = row + deltaRow;
+				int tempCol = col + deltaCol;
+				if (validIndex(tempRow, tempCol, MAX_ROWS, MAX_COLS)) {
+					int tempIndex = getIndex(tempRow, tempCol, MAX_COLS);
+					if (board[tempIndex].bombPlanted()) {
+						bombsFound++;
 					}
 				}
-				board[index].plantNumber(bombsFound);
-			}
+			});
+			board[index].plantNumber(bombsFound);
 		}
-	}
+	};
+
+	//Plant number for each cell
+	forEachCell(plantNumber, MAX_ROWS, MAX_COLS);
 }
 
 
@@ -237,47 +258,40 @@ int main( int argc, char* args[] ) {
 			}
 			//Handle mouse click
 			if (event.type == SDL_MOUSEBUTTONDOWN) {
-				SDL_GetMouseState(&mouseX, &mouseY);
-				//Handle left mouse click
-				if (event.button.button == SDL_BUTTON_LEFT) {
-					for (int row = 0; row < MAX_ROWS; ++row) {
-						for (int col = 0; col < MAX_COLS; ++col) {
-							int index = getIndex(row, col, MAX_COLS);
-							Cell& cell = board[index];
-							if (cell.isMouseInside(mouseX, mouseY)) {
-								cell.open();
-								if (gameState == FIRSTCELL) {
-									//Generate random bombs
-									generateBombs(board, row, col, MAX_ROWS, MAX_COLS);
-									//Open neighboring cells
+				forEachCell([&](const int row, const int col){
+					SDL_GetMouseState(&mouseX, &mouseY);
+					int index = getIndex(row, col, MAX_COLS);
+					Cell& cell = board[index];
+					if (cell.isMouseInside(mouseX, mouseY)) {
+						//Handle left mouse click
+						if (event.button.button == SDL_BUTTON_LEFT) {
+							cell.open();
+							if (gameState == PLAYING) {
+								if (cell.bombPlanted()) {
+									gameState = LOSE;
+								} else if (!cell.numberPlanted()) {
+									//Open neighboring cells if they do not have bombs or numbers
 									openBoard(board, row, col, MAX_ROWS, MAX_COLS);
-									gameState = PLAYING;
-								} else if (gameState == PLAYING) {
-									if (cell.bombPlanted()) {
-										gameState = LOSE;
-									} else if (!cell.numberPlanted()) {
-										//Open neighboring cells if they do not have bombs or numbers
-										openBoard(board, row, col, MAX_ROWS, MAX_COLS);
-									}
 								}
-								render = true;
-								break;
+							} else if (gameState == FIRSTCELL) {
+								//Generate random bombs
+								generateBombs(board, row, col, MAX_ROWS, MAX_COLS);
+								//Open neighboring cells
+								openBoard(board, row, col, MAX_ROWS, MAX_COLS);
+								gameState = PLAYING;
 							}
-						}
-					}
-				//Handle right mouse click
-				} else if (event.button.button == SDL_BUTTON_RIGHT) {
-					for (Cell& cell : board) {
-						if (cell.isMouseInside(mouseX, mouseY)) {
+							render = true;
+						} 
+						//Handle right mouse click
+						else if (event.button.button == SDL_BUTTON_RIGHT) {
 							cell.setFlag();
 							render = true;
-							break;
 						}
 					}
-				}
+				}, MAX_ROWS, MAX_COLS);
 			}
 		}
-
+		
 		if (gameState == LOSE) {
 			std::cout << "BOMB FOUND: YOU HAVE LOST!" << std::endl;
 			gameState = PLAYING;
