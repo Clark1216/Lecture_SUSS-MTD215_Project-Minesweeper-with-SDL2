@@ -25,16 +25,20 @@ static inline bool validIndex(const int row, const int col, const int MAX_ROWS, 
 	return row > -1 && col > -1 && row < MAX_ROWS && col < MAX_COLS;
 }
 
-//For each neighbour around the chosen cell
-static void forEachNeighbour(const std::function<void(const int, const int)>& func) {
+//For each neighbour around the chosen cell, do something
+static void forEachNeighbour(const std::function<void(const int, const int)>& func, const int row, const int col, const int MAX_ROWS, const int MAX_COLS) {
 	for (int deltaRow = -1; deltaRow < 2; ++deltaRow) {
 		for (int deltaCol = -1; deltaCol < 2; ++deltaCol) {
-			func(deltaRow, deltaCol);
+			int tempRow = row + deltaRow;
+			int tempCol = col + deltaCol;
+			if (validIndex(tempRow, tempCol, MAX_ROWS, MAX_COLS)) {
+				func(tempRow, tempCol);
+			}
 		}
 	}
 }
 
-//For each cell on the board, do something to it
+//For each cell on the board, do something to it using the row and col
 static void forEachCell(const std::function<void(const int, const int)>& func, const int MAX_ROWS, const int MAX_COLS) {
 	//Loop throw rows and cols of board
 	for (int row = 0; row < MAX_ROWS; ++row) {
@@ -77,55 +81,40 @@ static void generateBombs(std::vector<Cell>& board, const int firstClickedRow, c
 
 	/*-----------------------------------Plant numbers------------------------------*/
 	//Plant numbers in cells based on how many bombs there are in an 3 x 3 area
-	
-	//Create lamda to plant number of bombs around cell
-	auto plantNumber = [&](const int row, const int col) {
+	//Plant number for each cell
+	forEachCell([&](const int row, const int col) {
 		int index = getIndex(row, col, MAX_COLS);
 		if (!board[index].bombPlanted()) {
 			//Search bombs in a 3 x 3 area
 			int bombsFound = 0;
-			forEachNeighbour([&](const int deltaRow, const int deltaCol) {
-				int tempRow = row + deltaRow;
-				int tempCol = col + deltaCol;
-				if (validIndex(tempRow, tempCol, MAX_ROWS, MAX_COLS)) {
-					int tempIndex = getIndex(tempRow, tempCol, MAX_COLS);
-					if (board[tempIndex].bombPlanted()) {
-						bombsFound++;
-					}
+			forEachNeighbour([&](const int tempRow, const int tempCol) {
+				int tempIndex = getIndex(tempRow, tempCol, MAX_COLS);
+				if (board[tempIndex].bombPlanted()) {
+					bombsFound++;
 				}
-			});
+			}, row, col, MAX_ROWS, MAX_COLS);
 			board[index].plantNumber(bombsFound);
 		}
-	};
-
-	//Plant number for each cell
-	forEachCell(plantNumber, MAX_ROWS, MAX_COLS);
+	}, MAX_ROWS, MAX_COLS);
 }
 
-
 //Recursive function to open (expand) board
-static void openBoard(std::vector<Cell>& board, int row, int col, int maxRows, int maxCols) {
-	// for each neighbouring cell
-	for (int deltaRow = -1; deltaRow < 2; deltaRow++) {
-		for (int deltaCol = -1; deltaCol < 2; deltaCol++) {
-			int tempRow = row + deltaRow;
-			int tempCol = col + deltaCol;
-			if (validIndex(tempRow, tempCol, maxRows, maxCols)) {
-				int tempIndex = getIndex(tempRow, tempCol, maxCols);
-				Cell& tempCell = board[tempIndex];
-				if (!tempCell.isOpen()) {
-					if (tempCell.numberPlanted()) {
-						tempCell.open();
-					} else if (tempCell.bombPlanted()) {
-						return;
-					} else {
-						tempCell.open();
-						openBoard(board, tempRow, tempCol, maxRows, maxCols);
-					}
-				} 
+static void openBoard(std::vector<Cell>& board, const int row, const int col, const int MAX_ROWS, const int MAX_COLS) {
+	//For each neighbouring cell
+	forEachNeighbour([&](const int tempRow, const int tempCol) {
+		int tempIndex = getIndex(tempRow, tempCol, MAX_COLS);
+		Cell& tempCell = board[tempIndex];
+		if (!tempCell.isOpen()) {
+			if (tempCell.numberPlanted()) {
+				tempCell.open();
+			} else if (tempCell.bombPlanted()) {
+				return;
+			} else {
+				tempCell.open();
+				openBoard(board, tempRow, tempCol, MAX_ROWS, MAX_COLS);
 			}
-		}
-	}
+		} 
+	}, row, col, MAX_ROWS, MAX_COLS);
 }
 
 //SDL requires c style paramaters in the main function
