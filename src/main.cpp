@@ -1,121 +1,11 @@
 /*A Minesweeper made made using SDL and SDL_ttf*/
 #include <iostream>
 #include <string>
-#include <vector>
-#include <algorithm>
-#include <functional>
-#include <random>
-#include <chrono>
 
 #include <SDL.h>
 #include <SDL_ttf.h>
 
-#include "loadTexture.h"
-#include "UI_element.h"
-#include "button.h"
-#include "cell.h"
-
-//Get index of 1d array from 2d arguments
-static inline int getIndex(const int row, const int col, const int MAX_COLS) {
-	return row * MAX_COLS + col; 
-}
-
-//Return true if valid index (might not be necessary when using std::vector)
-static inline bool validIndex(const int row, const int col, const int MAX_ROWS, const int MAX_COLS) {
-	return row > -1 && col > -1 && row < MAX_ROWS && col < MAX_COLS;
-}
-
-//For each neighbour around the chosen cell, do something
-static void forEachNeighbour(const std::function<void(const int, const int)>& func, const int row, const int col, const int MAX_ROWS, const int MAX_COLS) {
-	for (int deltaRow = -1; deltaRow < 2; ++deltaRow) {
-		for (int deltaCol = -1; deltaCol < 2; ++deltaCol) {
-			int tempRow = row + deltaRow;
-			int tempCol = col + deltaCol;
-			if (validIndex(tempRow, tempCol, MAX_ROWS, MAX_COLS)) {
-				func(tempRow, tempCol);
-			}
-		}
-	}
-}
-
-//For each cell on the board, do something to it using the row and col
-static void forEachCell(const std::function<void(const int, const int)>& func, const int MAX_ROWS, const int MAX_COLS) {
-	//Loop throw rows and cols of board
-	for (int row = 0; row < MAX_ROWS; ++row) {
-		for (int col = 0; col < MAX_COLS; ++col) {
-			func(row, col);
-		}
-	}
-}
-
-//Generate the bombs (mines) on the board on the first click and don't place any bombs within a 3 x 3 area of the clicked cell
-static void generateBombs(std::vector<Cell>& board, const int firstClickedRow, const int firstClickedCol, const int MAX_ROWS, const int MAX_COLS) {
-	/*--------------------------------Plant random bombs----------------------------*/
-	//For our medium size mode we will use 40 bombs
-	//Create array with same size as board and hold the index in each element
-	const int NUMBER_OF_BOMBS = 40;
-	std::vector<int> bombGeneratorArray;
-	
-	//Create lambda to add to generator array
-	auto addCellIndex = [&](const int row, const int col) {
-		//Ignore 3 x 3 area around the first cell clicked (no bombs in this range)
-		if ((row < firstClickedRow - 1) || (row > firstClickedRow + 1) || (col < firstClickedCol - 1) || (col > firstClickedCol + 1)) {
-			int index = getIndex(row, col, MAX_COLS);
-			bombGeneratorArray.push_back(index);
-		} 
-	};
-
-	//Push back cell index onto generator array
-	forEachCell(addCellIndex, MAX_ROWS, MAX_COLS);
-
-	//Obtain a time-based seed
-	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-	//Shuffle bomb array
-	std::shuffle(bombGeneratorArray.begin(), bombGeneratorArray.end(), std::default_random_engine(seed));
-
-	//Use shuffled bomb array to plant bombs on the board
-	for (int i = 0; i < NUMBER_OF_BOMBS; ++i) {
-		int randomIndex = bombGeneratorArray[i];
-		board[randomIndex].plantBomb();
-	}
-
-	/*-----------------------------------Plant numbers------------------------------*/
-	//Plant numbers in cells based on how many bombs there are in an 3 x 3 area
-	//Plant number for each cell
-	forEachCell([&](const int row, const int col) {
-		int index = getIndex(row, col, MAX_COLS);
-		if (!board[index].bombPlanted()) {
-			//Search bombs in a 3 x 3 area
-			int bombsFound = 0;
-			forEachNeighbour([&](const int tempRow, const int tempCol) {
-				int tempIndex = getIndex(tempRow, tempCol, MAX_COLS);
-				if (board[tempIndex].bombPlanted()) {
-					bombsFound++;
-				}
-			}, row, col, MAX_ROWS, MAX_COLS);
-			board[index].plantNumber(bombsFound);
-		}
-	}, MAX_ROWS, MAX_COLS);
-}
-
-//Recursive function to open (expand) board
-static void openBoard(std::vector<Cell>& board, const int row, const int col, const int MAX_ROWS, const int MAX_COLS) {
-	//For each neighbouring cell
-	forEachNeighbour([&](const int tempRow, const int tempCol) {
-		int tempIndex = getIndex(tempRow, tempCol, MAX_COLS);
-		Cell& tempCell = board[tempIndex];
-		if (!tempCell.isOpen()) {
-			if (tempCell.numberPlanted()) {
-				tempCell.open();
-			} else if (tempCell.bombPlanted()) {
-				return;
-			} else {
-				tempCell.open();
-				openBoard(board, tempRow, tempCol, MAX_ROWS, MAX_COLS);
-			}
-		} 
-	}, row, col, MAX_ROWS, MAX_COLS);
-}
+#include "board.h"
 
 //SDL requires c style paramaters in the main function
 int main( int argc, char* args[] ) {
@@ -150,92 +40,15 @@ int main( int argc, char* args[] ) {
 		return -1;
 	}
 
-	//Load font
-	const int fontSize = 30;
-	SDL_Color fontColour = {255, 255, 255, 255}; //Black
-	TTF_Font* font = TTF_OpenFont("assets/octin sports free.ttf", fontSize);
-	if (font == NULL) {
-		std::cout << "Failed to load font! Error: " << TTF_GetError() << std::endl;
-		return -1;
-	}
-
-	/*------------------------------Create board of cells---------------------------*/
-	//Cell properties
-	const int MAX_ROWS = 14;
-	const int MAX_COLS = 18;
-	const int CELL_GAP = 4;
-	const int CELL_WIDTH = 35;
-	const int CELL_HEIGHT = CELL_WIDTH;
-	const SDL_Color CELL_COLOUR = {158, 158, 158, 255}; //DARK GREY
-	const SDL_Color PRESSED_CELL_COLOUR = {209, 209, 209, 255}; //LIGHT GREY
-
-	//Load cell font
-	const int CELL_FONT_SIZE = 30;
-	TTF_Font* CELL_FONT = TTF_OpenFont("assets/octin sports free.ttf", CELL_FONT_SIZE);
-	if (font == NULL) {
-		std::cout << "Failed to load cell font! Error: " << TTF_GetError() << std::endl;
-		return -1;
-	}
-
-	//Define colours for all 9 numbers (0-8)
-	const int COLOUR_COUNT = 9;
-	const SDL_Color colourOfNumbers[COLOUR_COUNT] = 
-	{{  0,   0,   0,   0},  //0 = Nothing (wont be used but kept to make index make more sense)
-	 { 20,  57, 168, 255},  //1 = BLUE
-	 { 20, 148,  18, 255},	//2 = GREEN
-	 {179,  30,  30, 255},  //3 = RED
-	 {103,  28, 173, 255},  //4 = PURPLE
-	 {133,  20,  20, 255},  //5 = MAROON
-	 {  9, 179, 164, 255},  //6 = TURQUOISE
-	 {  0,   0,   0, 255},  //7 = BLACK
-	 {255, 255, 255, 255}}; //8 = WHITE
-
-	//Load textures for all 9 numbers (0-8)
-	SDL_Texture* textureOfNumbers[9];
-	//0 Does not have a texture
-	textureOfNumbers[0] = nullptr;
-	for (int i = 1; i < 9; ++i) {
-		textureOfNumbers[i] = loadTexture(renderer, CELL_FONT, colourOfNumbers[i], std::to_string(i).c_str());
-	}
-	//Load flag and bomb texture
-	SDL_Texture* flagTexture = loadTexture(renderer, "assets/flag.bmp");
-	SDL_Texture* bombTexture = loadTexture(renderer, "assets/bomb.bmp");
-
-	//Set colours and textures in Cell class
-	Cell::sCellColour = CELL_COLOUR;
-	Cell::sPressedCellColour = PRESSED_CELL_COLOUR;
-	Cell::sTextureOfNumbers = textureOfNumbers;
-	Cell::sFlagTexture = flagTexture;
-	Cell::sBombTexture = bombTexture;
-
-	//Starting coordinates
-	int x = CELL_GAP;
-	int y = CELL_GAP;
-	//Create cells
-	std::vector<Cell> board;
-	for (int row = 0; row < MAX_ROWS; ++row) {
-		for (int col = 0; col < MAX_COLS; ++col) {
-			SDL_Rect rect = {x, y, CELL_WIDTH, CELL_HEIGHT};
-			Cell cell(rect, CELL_COLOUR);
-			board.push_back(cell);
-			x += CELL_WIDTH + CELL_GAP;
-		}
-		x = CELL_GAP;
-		y += CELL_HEIGHT + CELL_GAP;
-	}
-
 	/*------------------------------------Game Loop---------------------------------*/
-	//Track game state
-	//(FIRSTCELL state is when bombs are generated - 
-	//this guarantees no bombs are generated in a 3 x 3 area on the first cell clicked)
-	enum GameState {MENU, FIRSTCELL, PLAYING, LOSE, WIN};
+	//Create board
+	Board board(renderer);
 
 	//Set loop variables
+	GameState gameState = FIRSTCELL;
 	bool exit = false;
 	SDL_Event event;
-	int mouseX, mouseY = 0;
-	GameState gameState = FIRSTCELL;
-	bool render = true;
+	bool renderFlag= true;
 
 	//Main game loop
 	while (!exit) {
@@ -247,37 +60,7 @@ int main( int argc, char* args[] ) {
 			}
 			//Handle mouse click
 			if (event.type == SDL_MOUSEBUTTONDOWN) {
-				forEachCell([&](const int row, const int col){
-					SDL_GetMouseState(&mouseX, &mouseY);
-					int index = getIndex(row, col, MAX_COLS);
-					Cell& cell = board[index];
-					if (cell.isMouseInside(mouseX, mouseY)) {
-						//Handle left mouse click
-						if (event.button.button == SDL_BUTTON_LEFT) {
-							cell.open();
-							if (gameState == PLAYING) {
-								if (cell.bombPlanted()) {
-									gameState = LOSE;
-								} else if (!cell.numberPlanted()) {
-									//Open neighboring cells if they do not have bombs or numbers
-									openBoard(board, row, col, MAX_ROWS, MAX_COLS);
-								}
-							} else if (gameState == FIRSTCELL) {
-								//Generate random bombs
-								generateBombs(board, row, col, MAX_ROWS, MAX_COLS);
-								//Open neighboring cells
-								openBoard(board, row, col, MAX_ROWS, MAX_COLS);
-								gameState = PLAYING;
-							}
-							render = true;
-						} 
-						//Handle right mouse click
-						else if (event.button.button == SDL_BUTTON_RIGHT) {
-							cell.setFlag();
-							render = true;
-						}
-					}
-				}, MAX_ROWS, MAX_COLS);
+				board.handleMouseDown(event, renderFlag, gameState);
 			}
 		}
 		
@@ -286,21 +69,19 @@ int main( int argc, char* args[] ) {
 			gameState = PLAYING;
 		}
 
-		if (render) {
+		if (renderFlag) {
 			//Clear screen
 			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 			SDL_RenderClear(renderer);
 
-			//Render cells
-			for (Cell& cell : board) {
-				cell.render(renderer);
-			}
+			//Render board
+			board.render(renderer);
 
 			//Update screen from backbuffer and clear backbuffer
 			SDL_RenderPresent(renderer);
 
 			//Reset render flag
-			render = false;
+			renderFlag = false;
 		}
 
 		//Slow down program
@@ -309,17 +90,21 @@ int main( int argc, char* args[] ) {
 
 	/*--------------------------------Ending Programme--------------------------------*/
 	//Free textures
-	for (SDL_Texture* texture : textureOfNumbers) {
+	for (SDL_Texture* texture : Cell::sTextureOfNumbers) {
 		SDL_DestroyTexture(texture);
 	}
-	SDL_DestroyTexture(flagTexture);
-	SDL_DestroyTexture(bombTexture);
+	SDL_DestroyTexture(Cell::sFlagTexture);
+	SDL_DestroyTexture(Cell::sBombTexture);
+
+	//Close font
+	TTF_CloseFont(Cell::sFont);
+	Cell::sFont = nullptr;
 
 	//Destroy window and renderer
 	SDL_DestroyWindow(window);
 	SDL_DestroyRenderer(renderer);
 	window = nullptr;
-	window = nullptr;
+	renderer = nullptr;
 
 	//Quit SDL and TTF
 	SDL_Quit();
