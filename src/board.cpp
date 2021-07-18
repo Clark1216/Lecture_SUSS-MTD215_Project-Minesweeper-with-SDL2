@@ -7,7 +7,7 @@ Board::Board() :
 
 void Board::loadTextures(SDL_Renderer* renderer) {
 	//load font
-	Cell::sFont = getFont(Cell::sFONT_SIZE);
+	Cell::sFont = loadFont(Cell::sFONT_SIZE);
 
 	//Load textures for all 9 numbers (0-8)
 	//0 Does not have a texture
