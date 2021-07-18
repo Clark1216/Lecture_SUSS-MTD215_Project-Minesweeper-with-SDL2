@@ -9,7 +9,7 @@ void Menu::createButtons(SDL_Renderer* renderer) {
     //load font
     const int FONT_SIZE = 30;
     SDL_Color FONT_COLOUR = {255, 255, 255, 255}; //White
-	TTF_Font* font = getFont(FONT_SIZE);
+	TTF_Font* font = loadFont(FONT_SIZE);
 
     //Load texture
     SDL_Texture* mEasy = loadTexture(renderer, font, FONT_COLOUR, "Easy");
