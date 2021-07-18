@@ -15,6 +15,16 @@ SDL_Texture* createTextureFromSurface(SDL_Renderer* renderer, SDL_Surface* surfa
 	return texture;
 }
 
+//load font
+TTF_Font* loadFont(const int fontSize) {
+	TTF_Font* font = nullptr;
+	font = TTF_OpenFont("assets/octin sports free.ttf", fontSize);
+	if (font == nullptr) {
+		std::cout << "Failed to load cell font! Error: " << TTF_GetError() << std::endl;
+	}
+	return font;
+};
+
 //Load texture for text
 SDL_Texture* loadTexture(SDL_Renderer* renderer, TTF_Font* font, const SDL_Color& colour, const char* text) {
     SDL_Surface* surface = TTF_RenderText_Solid(font, text, colour);
