@@ -1,13 +1,13 @@
 #include "board.h"
 
-Board::Board(SDL_Renderer* renderer) :
-    mMaxRows(14), mMaxCols(18) {
-    /*------------------------------Create board of cells---------------------------*/
+Board::Board() :
+    mState(FIRSTCELL), mMaxRows(14), mMaxCols(18), mBombs(40) {
+
+}
+
+void Board::loadTextures(SDL_Renderer* renderer) {
 	//load font
-	Cell::sFont = TTF_OpenFont("assets/octin sports free.ttf", Cell::sFONT_SIZE);
-	if (Cell::sFont == NULL) {
-		std::cout << "Failed to load cell font! Error: " << TTF_GetError() << std::endl;
-	}
+	Cell::sFont = getFont(Cell::sFONT_SIZE);
 
 	//Load textures for all 9 numbers (0-8)
 	//0 Does not have a texture
@@ -19,6 +19,13 @@ Board::Board(SDL_Renderer* renderer) :
 	//Load flag and bomb texture
 	Cell::sFlagTexture = loadTexture(renderer, "assets/flag.bmp");
 	Cell::sBombTexture = loadTexture(renderer, "assets/bomb.bmp");
+
+}
+
+void Board::create(const int maxRows, const int maxCols, const int bombs) {
+	mMaxRows = maxRows;
+	mMaxCols = maxCols;
+	mBombs = bombs;
 
 	//Starting coordinates
 	int x = Cell::sGAP;
@@ -74,7 +81,7 @@ void Board::generateBombs(std::vector<Cell>& board, const int firstClickedRow, c
 	/*--------------------------------Plant random bombs----------------------------*/
 	//For our medium size mode we will use 40 bombs
 	//Create array with same size as board and hold the index in each element
-	const int NUMBER_OF_BOMBS = 40;
+	const int NUMBER_OF_BOMBS = mBombs;
 	std::vector<int> bombGeneratorArray;
 	
 	//Create lambda to add to generator array
@@ -138,7 +145,7 @@ void Board::openBoard(std::vector<Cell>& board, const int row, const int col) {
 	}, row, col);
 }
 
-void Board::handleMouseDown(const SDL_Event& event, bool& renderFlag, GameState& gameState) {
+void Board::handleMouseDown(const SDL_Event& event, bool& renderFlag) {
     forEachCell([&](const int row, const int col){
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
@@ -147,19 +154,19 @@ void Board::handleMouseDown(const SDL_Event& event, bool& renderFlag, GameState&
             //Handle left mouse click
             if (event.button.button == SDL_BUTTON_LEFT) {
                 cell.open();
-                if (gameState == PLAYING) {
+                if (mState == PLAYING) {
                     if (cell.bombPlanted()) {
-                        gameState = LOSE;
+                        mState = LOSE;
                     } else if (!cell.numberPlanted()) {
                         //Open neighboring cells if they do not have bombs or numbers
                         openBoard(mBoard, row, col);
                     }
-                } else if (gameState == FIRSTCELL) {
+                } else if (mState == FIRSTCELL) {
                     //Generate random bombs
                     generateBombs(mBoard, row, col);
                     //Open neighboring cells
                     openBoard(mBoard, row, col);
-                    gameState = PLAYING;
+                    mState = PLAYING;
                 }
                 renderFlag = true;
             } 
@@ -172,9 +179,32 @@ void Board::handleMouseDown(const SDL_Event& event, bool& renderFlag, GameState&
     });
 }
 
+void Board::handleState() {
+	if (mState == LOSE) {
+		std::cout << "BOMB FOUND: YOU HAVE LOST!" << std::endl;
+		mState = PLAYING;
+	}
+}
+
 void Board::render(SDL_Renderer* renderer) {
     //Render cells
     for (Cell& cell : mBoard) {
         cell.render(renderer);
     }
+}
+
+Board::~Board() {
+	//Free textures
+	for (SDL_Texture* texture : Cell::sTextureOfNumbers) {
+		SDL_DestroyTexture(texture);
+		texture = nullptr;
+	}
+	SDL_DestroyTexture(Cell::sFlagTexture);
+	SDL_DestroyTexture(Cell::sBombTexture);
+	Cell::sFlagTexture = nullptr;
+	Cell::sBombTexture = nullptr;
+
+	//Close font
+	TTF_CloseFont(Cell::sFont);
+	Cell::sFont = nullptr;
 }

@@ -9,23 +9,22 @@
 #include <random>
 #include <chrono>
 
-#include "cell.h"
 #include "loadTexture.h"
+#include "cell.h"
 
 //Track game state
 //(FIRSTCELL state is when bombs are generated - this guarantees no bombs are generated in a 3 x 3 area on the first cell clicked)
-enum GameState {MENU, FIRSTCELL, PLAYING, LOSE, WIN};
+enum BoardState {FIRSTCELL, PLAYING, LOSE, WIN};
 
 //Board filled with cells
 class Board {
     private:
         int mMaxRows;
         int mMaxCols;
+        int mBombs;
 
         std::vector<Cell> mBoard;
-
-    public:
-        Board(SDL_Renderer* renderer);
+        BoardState mState;
 
         inline int getIndex(const int row, const int col);
         inline bool validIndex(const int row, const int col);
@@ -36,7 +35,12 @@ class Board {
         void generateBombs(std::vector<Cell>& board, const int firstClickedRow, const int firstClickedCol);
         void openBoard(std::vector<Cell>& board, const int row, const int col);
 
-        void handleMouseDown(const SDL_Event& event, bool& renderFlag, GameState& gameState);
+    public:
+        Board();
+        void loadTextures(SDL_Renderer* renderer);
+        void create(const int maxRows, const int maxCols, const int bombs);
+        void handleMouseDown(const SDL_Event& event, bool& renderFlag);
+        void handleState();
         void render(SDL_Renderer* renderer);
-
+        ~Board();
 };
