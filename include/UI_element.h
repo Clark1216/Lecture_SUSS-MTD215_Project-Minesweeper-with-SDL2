@@ -1,23 +1,22 @@
 #pragma once
 #include <SDL.h>
-#include <SDL_ttf.h>
-#include <iostream>
 
+//Renders a coloured rect with a texture
 class UI_element {
-    protected:
+    private:
         SDL_Rect mRect;
         SDL_Color mColour;
 
-        //Texture for text
         SDL_Texture* mTexture;
         SDL_Rect mTextureRect;
 
-        //Center texture onto element
         void centerTexture();
-
+        
     public:
+        UI_element();
         UI_element(const SDL_Rect& rect, const SDL_Color& colour);
         void setTexture(SDL_Texture* texture);
+        void changeColourTo(const SDL_Color& colour);
+        SDL_Rect getRect() const ;
         void render(SDL_Renderer* renderer) const;
-
 };

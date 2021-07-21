@@ -1,24 +1,16 @@
 #pragma once
+#include <iostream>
 #include <SDL.h>
-#include <SDL_ttf.h>
 #include "button.h"
+#define NUMBER_COUNT 9
 
 //A Cell is a button
 class Cell : public Button {
     public:
-        static const int sWIDTH;
-        static const int sHEIGHT;
-        static const int sGAP;
+        static SDL_Color sCOLOUR;
+        static SDL_Color sPRESSED_COLOUR;
 
-        static const SDL_Color sCOLOUR;
-        static const SDL_Color sPRESSED_COLOUR;
-
-        static const int sFONT_SIZE;
-        static TTF_Font* sFont;
-
-	    static const SDL_Color sCOLOUR_OF_NUMBERS[9];
-
-        static SDL_Texture* sTextureOfNumbers[9];
+        static SDL_Texture* sTextureOfNumbers[NUMBER_COUNT];
         static SDL_Texture* sFlagTexture;
         static SDL_Texture* sBombTexture;
 
@@ -28,8 +20,11 @@ class Cell : public Button {
         bool mOpen;
         bool mFlag;
 
+        void checkTexturesExist();
+
     public:
-        Cell(const SDL_Rect& rect, const SDL_Color& colour);
+        Cell();
+        Cell(const SDL_Rect& rect);
         
         //Setters
         void plantBomb();
