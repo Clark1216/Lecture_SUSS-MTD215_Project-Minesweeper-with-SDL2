@@ -4,7 +4,7 @@ HUD::HUD(SDL_Renderer* renderer, const int SCREEN_WIDTH, const int HUD_HEIGHT, c
     //Define main HUD element properties
     const int UI_ELEMENT_COUNT = 4;
     const int TOTAL_WIDTH_REMAINING = SCREEN_WIDTH - UI_ELEMENT_COUNT * (HUD_GAP + 1);
-    const SDL_Color UI_ELEMENT_COLOUR = {114, 166, 176, 255}; // Grey-ish blue;
+    const SDL_Color UI_ELEMENT_COLOUR = {89, 142, 227, 255}; // Grey-ish blue;
     
     //Load Texture for menu and reset button
     //Load font
