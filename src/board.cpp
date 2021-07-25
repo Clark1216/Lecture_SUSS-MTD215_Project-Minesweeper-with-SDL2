@@ -140,7 +140,7 @@ void Board::generateBombs(const int firstClickedRow, const int firstClickedCol) 
 }
 
 //Recursive function to open (expand) board
-//Need to pass in hud to remove any flags in the way
+//Need to pass in hud to remove any flags in the way that will cause hud to update
 void Board::openBoard(const int row, const int col, HUD& hud) {
 	//For each neighbouring cell
 	forEachNeighbour([&](const int tempRow, const int tempCol) {
@@ -151,7 +151,7 @@ void Board::openBoard(const int row, const int col, HUD& hud) {
 				return;
 			else {
 				tempCell.open();
-				if (tempCell.mFlag) {
+				if (tempCell.getFlag()) {
 					//Remove flag
 					tempCell.setFlag();
 					hud.mFlagCounter.incrementCounter();
@@ -171,7 +171,7 @@ void Board::handleMouseDown(const SDL_Event& event, HUD& hud, bool& render) {
         Cell& cell = mBoard[getIndex(row, col)];
         if (cell.isMouseInside(mouseX, mouseY)) {
             //Handle left mouse click
-            if (event.button.button == SDL_BUTTON_LEFT && !cell.mFlag) {
+            if (event.button.button == SDL_BUTTON_LEFT && !cell.getFlag()) {
                 cell.open();
                 if (mState == PLAYING) {
                     if (cell.bombPlanted()) {
@@ -195,7 +195,7 @@ void Board::handleMouseDown(const SDL_Event& event, HUD& hud, bool& render) {
 				if (!cell.isOpen()) {
 					//If counter is greater than 0...
 					//... or if counter is equal to 0 and a flag is set
-					if (hud.mFlagCounter.getCounter() > 0 || hud.mFlagCounter.getCounter() == 0 && cell.mFlag) {
+					if (hud.mFlagCounter.getCounter() > 0 || hud.mFlagCounter.getCounter() == 0 && cell.getFlag()) {
 						//If flag was set, decrement flag count, else increment flag count#
 						cell.setFlag() ? hud.mFlagCounter.decrementCounter() : hud.mFlagCounter.incrementCounter();
 						
