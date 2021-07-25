@@ -33,6 +33,6 @@ void UI_element::render(SDL_Renderer* renderer) const {
 
     // Render texture if it exists
     if (mTexture != nullptr) {
-        SDL_RenderCopy(renderer, mTexture, nullptr, &mTextureRect);
+        SDL_RenderCopy(renderer, mTexture, NULL, &mTextureRect);
     }
 }
