@@ -22,7 +22,7 @@ FlagCounter::FlagCounter(const int initialCount, SDL_Renderer* renderer, const S
     //load font
     const int FONT_SIZE = 30;					
     TTF_Font* font = loadFont(FONT_SIZE);
-    const SDL_Color FONT_COLOUR = {191, 8, 17, 255}; //Red
+    const SDL_Color FONT_COLOUR = {204, 4, 4, 255}; //Red
 
     //Load textures for numbers for flag counter and timer
     for (int i = 0; i < NUMBER_OF_DIGITS; ++i) {
