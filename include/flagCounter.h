@@ -34,9 +34,10 @@ class FlagCounter {
 
     public:
         FlagCounter();
-        FlagCounter(const int initialCount, SDL_Renderer* renderer, const int fontSize, const SDL_Rect& rect, const SDL_Color& colour);
+        FlagCounter(const int initialCount, SDL_Renderer* renderer, const SDL_Rect& rect, const SDL_Color& colour);
         void incrementCounter();
         void decrementCounter();
+        int getCounter();
         void render(SDL_Renderer* renderer) const;
         void free();
 

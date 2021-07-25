@@ -3,24 +3,25 @@
 FlagCounter::FlagCounter() 
     : mCounter(0), mMaxCounter(99),
     mRect({0, 0, 0, 0}), mColour({0, 0, 0 ,0}),
+    mDigitTextures(),
     mFirstDigitTexture(nullptr), mFirstDigitRect({0, 0, 0, 0}),
     mSecondDigitTexture(nullptr), mSecondDigitRect({0, 0, 0, 0})  {}
 
-FlagCounter::FlagCounter(const int initialCount, SDL_Renderer* renderer, const int fontSize, const SDL_Rect& rect, const SDL_Color& colour) 
+FlagCounter::FlagCounter(const int initialCount, SDL_Renderer* renderer, const SDL_Rect& rect, const SDL_Color& colour) 
     : mCounter(initialCount), mMaxCounter(99),
     mRect(rect), mColour(colour),
+    mDigitTextures(),
     mFirstDigitTexture(nullptr), mFirstDigitRect({0, 0, 0, 0}),
     mSecondDigitTexture(nullptr), mSecondDigitRect({0, 0, 0, 0}) {
-    
+
     //Check counter is lower than maximum count
     if (mCounter > mMaxCounter) {
         std::cout << "Warning: Number greater than 99! Make sure it is equal or less than this" << std::endl; 
     }
 
     //load font
-    TTF_Font* font = loadFont(fontSize);
-
-    //Define colour
+    const int FONT_SIZE = 30;					
+    TTF_Font* font = loadFont(FONT_SIZE);
     const SDL_Color FONT_COLOUR = {191, 8, 17, 255}; //Red
 
     //Load textures for numbers for flag counter and timer
@@ -30,6 +31,7 @@ FlagCounter::FlagCounter(const int initialCount, SDL_Renderer* renderer, const i
 
     //Close font
     TTF_CloseFont(font);
+    font = nullptr;
 
     //Update counter textures
     update();    
@@ -65,6 +67,10 @@ void FlagCounter::incrementCounter() {
 void FlagCounter::decrementCounter() {
     mCounter--;
     update();
+}
+
+int FlagCounter::getCounter() {
+    return mCounter;
 }
 
 void FlagCounter::render(SDL_Renderer* renderer) const {
