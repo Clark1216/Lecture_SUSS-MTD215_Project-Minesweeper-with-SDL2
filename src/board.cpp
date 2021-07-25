@@ -1,14 +1,14 @@
 #include "board.h"
 
-Board::Board(const BoardDetails& boardDetails, const int CELL_WIDTH, const int CELL_HEIGHT, const int CELL_GAP) 
+Board::Board(const BoardDetails& boardDetails, const int START_X, const int START_Y, const int CELL_WIDTH, const int CELL_HEIGHT, const int CELL_GAP) 
 	: mRows(boardDetails.rows), mCols(boardDetails.cols), mBombs(boardDetails.bombs), mState(FIRST_CELL), mBoard(nullptr) {
 
 	//Create array on the heap
 	mBoard = new Cell[mRows * mCols];
 	
 	//Starting coordinates
-	int x = CELL_GAP;
-	int y = CELL_GAP;
+	int x = START_X + CELL_GAP;
+	int y = START_Y + CELL_GAP;
 	//Create cells
 	for (int row = 0; row < mRows; ++row) {
 		for (int col = 0; col < mCols; ++col) {
@@ -123,14 +123,14 @@ void Board::openBoard(const int row, const int col) {
 	}, row, col);
 }
 
-void Board::handleMouseDown(const SDL_Event& event, bool& renderFlag) {
+void Board::handleMouseDown(const SDL_Event& event, HUD& hud, bool& render) {
     forEachCell([&](const int row, const int col){
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
         Cell& cell = mBoard[getIndex(row, col)];
         if (cell.isMouseInside(mouseX, mouseY)) {
             //Handle left mouse click
-            if (event.button.button == SDL_BUTTON_LEFT) {
+            if (event.button.button == SDL_BUTTON_LEFT && !cell.mFlag) {
                 cell.open();
                 if (mState == PLAYING) {
                     if (cell.bombPlanted()) {
@@ -146,22 +146,19 @@ void Board::handleMouseDown(const SDL_Event& event, bool& renderFlag) {
                     openBoard(row, col);
                     mState = PLAYING;
                 }
-                renderFlag = true;
+                render = true;
+				return;
             } 
             //Handle right mouse click
             else if (event.button.button == SDL_BUTTON_RIGHT) {
-                cell.setFlag();
-                renderFlag = true;
+				//If flag was set, decrement flag count, else increment flag count#
+				cell.setFlag() ? hud.mFlagCounter.decrementCounter() : hud.mFlagCounter.incrementCounter();
+				
+                render = true;
+				return;
             }
         }
     });
-}
-
-void Board::handleState() {
-	if (mState == LOSE) {
-		std::cout << "BOMB FOUND: YOU HAVE LOST!" << std::endl;
-		mState = PLAYING;
-	}
 }
 
 void Board::render(SDL_Renderer* renderer) {
