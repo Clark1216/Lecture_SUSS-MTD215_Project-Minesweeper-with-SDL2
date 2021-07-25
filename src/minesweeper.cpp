@@ -150,6 +150,7 @@ void Minesweeper::boardLoop() {
             }
             //Handle mouse click
             if (event.type == SDL_MOUSEBUTTONDOWN) {
+                //Pass hud down for any changes in flag count
                 board.handleMouseDown(event, hud, renderFlag);
                 hud.handleMouseDown(event, handleMenuEvent, handleResetEvent);
             }
@@ -184,9 +185,11 @@ void Minesweeper::play() {
         switch (mGameState) {
             case MENU:
                 menuLoop();
+                break;
             case BOARD:
             case RESET:
                 boardLoop();
+                break;
         }	
     }
 }
