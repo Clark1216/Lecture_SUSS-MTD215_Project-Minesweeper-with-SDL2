@@ -21,6 +21,7 @@ class Cell : public Button {
         bool mFlag;
 
         void checkTexturesExist();
+        friend class Board;
 
     public:
         Cell();
@@ -30,7 +31,7 @@ class Cell : public Button {
         void plantBomb();
         void plantNumber(const int number);
         void open();
-        void setFlag();
+        bool setFlag();
 
         //Getters
         bool isOpen();

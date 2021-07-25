@@ -39,11 +39,13 @@ void Cell::open() {
     }
 }
 
-void Cell::setFlag() {
+//Flip flag bool and return result
+bool Cell::setFlag() {
     if (!mOpen) {
         mFlag = !mFlag;
         setTexture(mFlag ? sFlagTexture : nullptr);
     }
+    return mFlag;
 }
 
 bool Cell::bombPlanted() {
