@@ -36,3 +36,8 @@ void UI_element::render(SDL_Renderer* renderer) const {
         SDL_RenderCopy(renderer, mTexture, NULL, &mTextureRect);
     }
 }
+
+void UI_element::free() {
+    SDL_DestroyTexture(mTexture);
+    mTexture = nullptr;
+}

@@ -19,4 +19,5 @@ class UI_element {
         void changeColourTo(const SDL_Color& colour);
         SDL_Rect getRect() const ;
         void render(SDL_Renderer* renderer) const;
+        void free();
 };
