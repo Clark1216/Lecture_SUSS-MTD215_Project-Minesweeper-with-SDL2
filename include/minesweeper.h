@@ -1,9 +1,10 @@
 /*Singleton to encapsulate our minesweepr game*/
 #pragma once
+#include <string>
+#include <iostream>
 #include <SDL.h>
 #include <SDL_ttf.h>
-#include <iostream>
-#include <string>
+
 #include "loadTexture.h"
 #include "boardDetails.h"
 #include "cell.h"

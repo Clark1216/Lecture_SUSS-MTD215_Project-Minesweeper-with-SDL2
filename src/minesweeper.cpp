@@ -2,7 +2,7 @@
 
 Minesweeper::Minesweeper() 
 : mWindow(nullptr), mRenderer(nullptr), mGameState(MENU), mBoardDetails({0, 0, 0}) {
-    //Screen dimension
+    //Initial screen dimensions to be equal to menu dimensions
     const int SCREEN_WIDTH = 500;
     const int SCREEN_HEIGHT = 150;
 
@@ -37,37 +37,41 @@ void Minesweeper::menuLoop() {
     SDL_SetWindowSize(mWindow, SCREEN_WIDTH, SCREEN_HEIGHT);
     SDL_SetWindowPosition(mWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
-    //Define button desgin
+    //Define button dimensions, gap, and colour
     const int BUTTON_GAP = 10;
     const int BUTTON_WIDTH = 153;
     const int BUTTON_HEIGHT = 130;
-    const SDL_Color BUTTON_COLOUR = {145, 145, 145, 255};
+    const SDL_Color BUTTON_COLOUR = {114, 166, 176, 255}; //Grey-ish blue
+
+    //Define max rows and max columns for each difficulty and bombs
+    //BoardDetails{maxRows, maxCols, bombs}
+    BoardDetails easyDetails = {9, 9, 10};
+    BoardDetails mediumDetails = {16, 16, 40};
+    BoardDetails hardDetails = {16, 30, 99};
+    BoardDetails allBoardDetails[MENU_BUTTON_COUNT] = {easyDetails, mediumDetails, hardDetails};
 
     //load font
     const int FONT_SIZE = 30;
     SDL_Color FONT_COLOUR = {255, 255, 255, 255}; //White
 	TTF_Font* font = loadFont(FONT_SIZE);
 
-    //Load texture
-    const char* diffculties[NUMBER_OF_BUTTONS] = {"Easy", "Medium", "Hard"};
-    SDL_Texture* buttonTextures[NUMBER_OF_BUTTONS];
-    for (int i = 0; i < NUMBER_OF_BUTTONS; ++i) {
-        buttonTextures[i] = loadTexture(mRenderer, font, FONT_COLOUR, diffculties[i]);
+    //Load texture for each button based on the difficulty they represent
+    const char* difficulties[MENU_BUTTON_COUNT] = {"Easy", "Medium", "Hard"};
+    SDL_Texture* menuTextures[MENU_BUTTON_COUNT];
+    for (int i = 0; i < MENU_BUTTON_COUNT; ++i) {
+        menuTextures[i] = loadTexture(mRenderer, font, FONT_COLOUR, difficulties[i]);
     }
 
-    //Define max rows and max columns for each difficulty and bombs
-    //BoardDetails{maxRows, maxCols, bombs}
-    const int MAX_BUTTONS = 3;
-    BoardDetails easyDetails = {9, 9, 10};
-    BoardDetails mediumDetails = {16, 16, 40};
-    BoardDetails hardDetails = {16, 30, 99};
-    BoardDetails allBoardDetails[MAX_BUTTONS] = {easyDetails, mediumDetails, hardDetails};
+    //Close font
+    TTF_CloseFont(font);
+    font = nullptr;
 
     //Create menu
-    Menu menu(allBoardDetails, buttonTextures, BUTTON_GAP, BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_COLOUR);
+    Menu menu(allBoardDetails, menuTextures, BUTTON_GAP, BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_COLOUR);
 
     //Set loop variables
     SDL_Event event;
+    bool updateFlag = false;
     bool renderFlag = true;
 
     //Menu loop
@@ -80,13 +84,18 @@ void Minesweeper::menuLoop() {
             }
             //Handle mouse click
             if (event.type == SDL_MOUSEBUTTONDOWN) {
-                menu.handleMouseDown(event, renderFlag);
+                menu.handleMouseDown(event, updateFlag);
             }
         }
 
-        //Handle state and return true if button was clicked
-        if (menu.handleState(mBoardDetails)) {
-            mGameState = BOARD;
+        //If a button was clicked, update flag was set to true
+        if (updateFlag) {
+            //Change the board details based on which button was clicked
+            if (menu.handleState(mBoardDetails)) {
+                //Change game state to board
+                mGameState = BOARD;
+            }
+            updateFlag = false;
         }
 
         if (renderFlag) {
@@ -108,37 +117,66 @@ void Minesweeper::menuLoop() {
         SDL_Delay(20);
     }
 
-    //Destroy fonts and textures
-    TTF_CloseFont(font);
-    font = nullptr;
-
-    for (int i = 0; i < NUMBER_OF_BUTTONS; ++i) {
-        SDL_DestroyTexture(buttonTextures[i]);
-        buttonTextures[i] = nullptr;
+    //Free textures
+    for (int i = 0; i < MENU_BUTTON_COUNT; ++i) {
+        SDL_DestroyTexture(menuTextures[i]);
+        menuTextures[i] = nullptr;
     }
 
 }
 
-//Board loop contianing the chosen difficulty of the game
+//Board loop contains the game difficulty chosen with hud
 void Minesweeper::boardLoop() {
+/*-----------------------------Board sizing is based on difficulty and HUD-----------------------*/
     //Define size of cells
     const int CELL_WIDTH = 35;
     const int CELL_HEIGHT = 35;
     const int CELL_GAP = 4;
 
-    //Change size of window based on size of cells
-    const int SCREEN_WIDTH = CELL_WIDTH * mBoardDetails.cols + CELL_GAP * (mBoardDetails.cols + 1);
-    const int SCREEN_HEIGHT = CELL_HEIGHT * mBoardDetails.rows + CELL_GAP* (mBoardDetails.rows + 1);
+    //Extract board details
+    const int ROWS = mBoardDetails.rows;
+    const int COLS = mBoardDetails.cols;
+    const int STARTING_FLAG_COUNT = mBoardDetails.bombs;
+
+    //Define HUD height and gap
+    const int HUD_HEIGHT = 50;
+    const int HUD_GAP = 4;
+
+    //Change size of window based on board dimensions, size of hud, and size of cells
+    const int SCREEN_WIDTH = CELL_WIDTH * COLS + CELL_GAP * (COLS + 1);
+    const int SCREEN_HEIGHT = CELL_HEIGHT * ROWS + CELL_GAP * (ROWS + 1) + HUD_HEIGHT + 2 * CELL_GAP;
     SDL_SetWindowSize(mWindow, SCREEN_WIDTH, SCREEN_HEIGHT);
     SDL_SetWindowPosition(mWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
-    //load font
-    const int FONT_SIZE = 30;
-    TTF_Font* font = loadFont(FONT_SIZE);
+/*--------------------------------------------Create HUD------------------------------------------*/
+    //HUD contians menu button, timer, flag counter, and reset button 
+    //Define starting flag count based on number of bombs/mines placed
 
-    //Define colours for all 9 numbers (0-8)
+    //Load Texture for menu and reset button
+    //Load font
+    int font_size = 25;
+    SDL_Color FONT_COLOUR = {255, 255, 255, 255}; //White
+    TTF_Font* font = loadFont(font_size);
+
+    //Load texture for each button based on the difficulty they represent
+    SDL_Texture* menuButtonTexture = loadTexture(mRenderer, font, FONT_COLOUR, "Menu");
+    SDL_Texture* resetButtonTexture = loadTexture(mRenderer, font, FONT_COLOUR, "Reset");
+
+    //Close font
+    TTF_CloseFont(font);
+    font = nullptr;
+
+    //Create hud
+    HUD hud(mRenderer, menuButtonTexture, resetButtonTexture, SCREEN_WIDTH, HUD_HEIGHT, HUD_GAP, STARTING_FLAG_COUNT); 
+
+/*-------------------------------------------Create board-----------------------------------------*/
+    //load font
+    font_size = 30;
+    font = loadFont(font_size);
+
+    //Define colours for all 9 numbers (0-8) (for the board)
     const int MAX_NUMBERS = 9;
-    const SDL_Color COLOUR_OF_NUMBERS[MAX_NUMBERS] = 
+    const SDL_Color COLOUR_OF_NUMBERS[MAX_NUMBERS] =
     {{  0,   0,   0,  0},  //0 = Nothing (wont be used but kept to make index make more sense)
     { 20,  57, 168, 255},  //1 = BLUE
     { 20, 148,  18, 255},  //2 = GREEN
@@ -155,6 +193,10 @@ void Minesweeper::boardLoop() {
         Cell::sTextureOfNumbers[i] = loadTexture(mRenderer, font, COLOUR_OF_NUMBERS[i], std::to_string(i).c_str());
     }
 
+    //Close font
+    TTF_CloseFont(font);
+    font = nullptr;
+
     //Set Cell flag and bomb textures
     Cell::sFlagTexture = loadTexture(mRenderer, "assets/flag.bmp");
     Cell::sBombTexture = loadTexture(mRenderer, "assets/bomb.bmp");
@@ -163,8 +205,12 @@ void Minesweeper::boardLoop() {
     Cell::sCOLOUR = {158, 158, 158, 255}; //DARK GREY
     Cell::sPRESSED_COLOUR = {209, 209, 209, 255}; //LIGHT GREY
     
+    //Start board coordinates below HUD
+    const int START_X = 0;
+    const int START_Y = HUD_HEIGHT + CELL_GAP;
+
     //Create board
-    Board board(mBoardDetails, CELL_WIDTH, CELL_HEIGHT, CELL_GAP);
+    Board board(mBoardDetails, START_X, START_Y, CELL_WIDTH, CELL_HEIGHT, CELL_GAP);
     
     //Set loop variables
     SDL_Event event;
@@ -180,17 +226,18 @@ void Minesweeper::boardLoop() {
             }
             //Handle mouse click
             if (event.type == SDL_MOUSEBUTTONDOWN) {
-                board.handleMouseDown(event, renderFlag);
+                board.handleMouseDown(event, hud, renderFlag);
+                hud.handleMouseDown(event);
             }
         }
-        
-        //Handle current state of board
-        board.handleState();
 
         if (renderFlag) {
             //Clear screen
             SDL_SetRenderDrawColor(mRenderer, 0, 0, 0, 255);
             SDL_RenderClear(mRenderer);
+
+            //Render HUD
+            hud.render(mRenderer);
 
             //Render board
             board.render(mRenderer);
@@ -206,17 +253,19 @@ void Minesweeper::boardLoop() {
         SDL_Delay(20);
     }
 
-    //Destroy fonts and textures
-    TTF_CloseFont(font);
+    //Destroy textures
     SDL_DestroyTexture(Cell::sFlagTexture);
     SDL_DestroyTexture(Cell::sBombTexture);
-    font = nullptr;
+    SDL_DestroyTexture(menuButtonTexture);
+    SDL_DestroyTexture(resetButtonTexture);
     Cell::sFlagTexture = nullptr;
     Cell::sBombTexture = nullptr;
+    menuButtonTexture = nullptr;
+    resetButtonTexture = nullptr;
 
-    for (int i = 0; i < MAX_NUMBERS; ++i) {
-        SDL_DestroyTexture(Cell::sTextureOfNumbers[i]);
-        Cell::sTextureOfNumbers[i] = nullptr;
+    for (auto& texture : Cell::sTextureOfNumbers) {
+        SDL_DestroyTexture(texture);
+        texture = nullptr;
     }
 }
 
