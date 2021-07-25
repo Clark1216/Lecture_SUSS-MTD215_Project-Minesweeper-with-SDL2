@@ -1,8 +1,10 @@
 #pragma once
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include <functional>
 #include <iostream>
 
+#include "loadTexture.h"
 #include "boardDetails.h"
 #include "difficultyButton.h"
 
@@ -12,12 +14,11 @@
 class Menu {
     private:
         DifficultyButton mDifficultyButtons[MENU_BUTTON_COUNT];
-        DifficultyButton* mChosenButton;
 
     public:
-        Menu(BoardDetails allBoardDetails[MENU_BUTTON_COUNT], SDL_Texture* textures[MENU_BUTTON_COUNT], const int BUTTON_GAP, const int BUTTON_WIDTH, const int BUTTON_HEIGHT, const SDL_Color BUTTON_COLOUR);
-        void handleMouseDown(const SDL_Event& event, bool& updateFlag);
-        bool handleState(BoardDetails& boardDetails);
+        Menu(SDL_Renderer* renderer, const int SCREEN_WIDTH, const int SCREEN_HEIGHT);
+        void handleMouseDown(const SDL_Event& event, const std::function<void(const BoardDetails&)>& handleDifficulty);
         void render(SDL_Renderer* renderer);
+        ~Menu();
         
 };
