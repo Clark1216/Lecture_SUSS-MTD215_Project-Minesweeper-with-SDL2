@@ -37,41 +37,17 @@ void Minesweeper::menuLoop() {
     SDL_SetWindowSize(mWindow, SCREEN_WIDTH, SCREEN_HEIGHT);
     SDL_SetWindowPosition(mWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
-    //Define button dimensions, gap, and colour
-    const int BUTTON_GAP = 10;
-    const int BUTTON_WIDTH = 153;
-    const int BUTTON_HEIGHT = 130;
-    const SDL_Color BUTTON_COLOUR = {114, 166, 176, 255}; //Grey-ish blue
-
-    //Define max rows and max columns for each difficulty and bombs
-    //BoardDetails{maxRows, maxCols, bombs}
-    BoardDetails easyDetails = {9, 9, 10};
-    BoardDetails mediumDetails = {16, 16, 40};
-    BoardDetails hardDetails = {16, 30, 99};
-    BoardDetails allBoardDetails[MENU_BUTTON_COUNT] = {easyDetails, mediumDetails, hardDetails};
-
-    //load font
-    const int FONT_SIZE = 30;
-    SDL_Color FONT_COLOUR = {255, 255, 255, 255}; //White
-	TTF_Font* font = loadFont(FONT_SIZE);
-
-    //Load texture for each button based on the difficulty they represent
-    const char* difficulties[MENU_BUTTON_COUNT] = {"Easy", "Medium", "Hard"};
-    SDL_Texture* menuTextures[MENU_BUTTON_COUNT];
-    for (int i = 0; i < MENU_BUTTON_COUNT; ++i) {
-        menuTextures[i] = loadTexture(mRenderer, font, FONT_COLOUR, difficulties[i]);
-    }
-
-    //Close font
-    TTF_CloseFont(font);
-    font = nullptr;
-
     //Create menu
-    Menu menu(allBoardDetails, menuTextures, BUTTON_GAP, BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_COLOUR);
+    Menu menu(mRenderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    //Create lambda to handle difficulty chosen
+    auto handleDifficulty = [&](const BoardDetails& boardDetails){
+        mBoardDetails = boardDetails;
+        mGameState = BOARD;
+    };
 
     //Set loop variables
     SDL_Event event;
-    bool updateFlag = false;
     bool renderFlag = true;
 
     //Menu loop
@@ -84,18 +60,8 @@ void Minesweeper::menuLoop() {
             }
             //Handle mouse click
             if (event.type == SDL_MOUSEBUTTONDOWN) {
-                menu.handleMouseDown(event, updateFlag);
+                menu.handleMouseDown(event, handleDifficulty);
             }
-        }
-
-        //If a button was clicked, update flag was set to true
-        if (updateFlag) {
-            //Change the board details based on which button was clicked
-            if (menu.handleState(mBoardDetails)) {
-                //Change game state to board
-                mGameState = BOARD;
-            }
-            updateFlag = false;
         }
 
         if (renderFlag) {
@@ -115,12 +81,6 @@ void Minesweeper::menuLoop() {
 
         //Slow down programme
         SDL_Delay(20);
-    }
-
-    //Free textures
-    for (int i = 0; i < MENU_BUTTON_COUNT; ++i) {
-        SDL_DestroyTexture(menuTextures[i]);
-        menuTextures[i] = nullptr;
     }
 
 }
