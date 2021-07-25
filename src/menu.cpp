@@ -1,16 +1,16 @@
 #include "menu.h"
 
-Menu::Menu(BoardDetails allBoardDetails[NUMBER_OF_BUTTONS], SDL_Texture* buttonTextures[NUMBER_OF_BUTTONS], const int BUTTON_GAP, const int BUTTON_WIDTH, const int BUTTON_HEIGHT, const SDL_Color BUTTON_COLOUR)
+Menu::Menu(BoardDetails allBoardDetails[MENU_BUTTON_COUNT], SDL_Texture* textures[MENU_BUTTON_COUNT], const int BUTTON_GAP, const int BUTTON_WIDTH, const int BUTTON_HEIGHT, const SDL_Color BUTTON_COLOUR)
     : mChosenButton(nullptr) {
-
+    
     //Starting coordinates
 	int x = BUTTON_GAP;
 	int y = BUTTON_GAP;
 	//Create buttons
-	for (int i = 0; i < NUMBER_OF_BUTTONS; ++i) {
+	for (int i = 0; i < MENU_BUTTON_COUNT; ++i) {
         SDL_Rect rect = {x, y, BUTTON_WIDTH, BUTTON_HEIGHT};
         DifficultyButton button(rect, BUTTON_COLOUR);
-        button.setTexture(buttonTextures[i]);
+        button.setTexture(textures[i]);
         button.boardDetails = allBoardDetails[i];
         mDifficultyButtons[i] = button;
         x += BUTTON_WIDTH + BUTTON_GAP;
@@ -18,13 +18,14 @@ Menu::Menu(BoardDetails allBoardDetails[NUMBER_OF_BUTTONS], SDL_Texture* buttonT
 	}
 }
 
-void Menu::handleMouseDown(const SDL_Event& event, bool& renderFlag) {
+void Menu::handleMouseDown(const SDL_Event& event, bool& updateFlag) {
     int mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
     for (auto& button : mDifficultyButtons) {
         if (button.isMouseInside(mouseX, mouseY)) {
             if (event.button.button == SDL_BUTTON_LEFT) {
                 mChosenButton = &button;
+                updateFlag = true;
             }
         }
     }
@@ -33,7 +34,6 @@ void Menu::handleMouseDown(const SDL_Event& event, bool& renderFlag) {
 bool Menu::handleState(BoardDetails& boardDetails) {
     if (mChosenButton != nullptr) {
         boardDetails = mChosenButton->boardDetails;
-        std::cout << boardDetails.bombs << std::endl;
         return true;
     }
     return false;
