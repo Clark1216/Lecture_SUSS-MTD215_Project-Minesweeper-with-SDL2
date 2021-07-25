@@ -59,3 +59,7 @@ bool Cell::numberPlanted() {
 bool Cell::isOpen() {
     return mOpen;
 }
+
+bool Cell::getFlag() {
+    return mFlag;
+}
