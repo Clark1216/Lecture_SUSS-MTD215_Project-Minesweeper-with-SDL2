@@ -105,19 +105,25 @@ void Board::generateBombs(const int firstClickedRow, const int firstClickedCol) 
 }
 
 //Recursive function to open (expand) board
-void Board::openBoard(const int row, const int col) {
+//Need to pass in hud to remove any flags in the way
+void Board::openBoard(const int row, const int col, HUD& hud) {
 	//For each neighbouring cell
 	forEachNeighbour([&](const int tempRow, const int tempCol) {
 		int tempIndex = getIndex(tempRow, tempCol);
 		Cell& tempCell = mBoard[tempIndex];
 		if (!tempCell.isOpen()) {
-			if (tempCell.numberPlanted()) {
-				tempCell.open();
-			} else if (tempCell.bombPlanted()) {
+			if (tempCell.bombPlanted())
 				return;
-			} else {
+			else {
 				tempCell.open();
-				openBoard(tempRow, tempCol);
+				if (tempCell.mFlag) {
+					//Remove flag
+					tempCell.setFlag();
+					hud.mFlagCounter.incrementCounter();
+				}
+				if (!tempCell.numberPlanted()) {
+					openBoard(tempRow, tempCol, hud);
+				}
 			}
 		} 
 	}, row, col);
@@ -137,13 +143,13 @@ void Board::handleMouseDown(const SDL_Event& event, HUD& hud, bool& render) {
                         mState = LOSE;
                     } else if (!cell.numberPlanted()) {
                         //Open neighboring cells if they do not have bombs or numbers
-                        openBoard(row, col);
+                        openBoard(row, col, hud);
                     }
                 } else if (mState == FIRST_CELL) {
                     //Generate random bombs
                     generateBombs(row, col);
                     //Open neighboring cells
-                    openBoard(row, col);
+                    openBoard(row, col, hud);
                     mState = PLAYING;
                 }
                 render = true;
@@ -151,11 +157,17 @@ void Board::handleMouseDown(const SDL_Event& event, HUD& hud, bool& render) {
             } 
             //Handle right mouse click
             else if (event.button.button == SDL_BUTTON_RIGHT) {
-				//If flag was set, decrement flag count, else increment flag count#
-				cell.setFlag() ? hud.mFlagCounter.decrementCounter() : hud.mFlagCounter.incrementCounter();
-				
-                render = true;
-				return;
+				if (!cell.isOpen()) {
+					//If counter is greater than 0...
+					//... or if counter is equal to 0 and a flag is set
+					if (hud.mFlagCounter.getCounter() > 0 || hud.mFlagCounter.getCounter() == 0 && cell.mFlag) {
+						//If flag was set, decrement flag count, else increment flag count#
+						cell.setFlag() ? hud.mFlagCounter.decrementCounter() : hud.mFlagCounter.incrementCounter();
+						
+						render = true;
+						return;
+					}
+				}
             }
         }
     });

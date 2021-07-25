@@ -32,7 +32,7 @@ class Board {
         void forEachCell(const std::function<void(const int, const int)>& func);
 
         void generateBombs(const int firstClickedRow, const int firstClickedCol);
-        void openBoard(const int row, const int col);
+        void openBoard(const int row, const int col, HUD& hud);
 
     public:
         Board(const BoardDetails& boardDetails, const int START_X, const int START_Y, const int CELL_WIDTH, const int CELL_HEIGHT, const int CELL_GAP);
