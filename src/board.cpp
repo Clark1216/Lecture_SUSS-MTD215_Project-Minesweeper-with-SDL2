@@ -1,8 +1,43 @@
 #include "board.h"
 
-Board::Board(const BoardDetails& boardDetails, const int START_X, const int START_Y, const int CELL_WIDTH, const int CELL_HEIGHT, const int CELL_GAP) 
+Board::Board(SDL_Renderer* renderer, const BoardDetails& boardDetails, const int START_X, const int START_Y, const int CELL_WIDTH, const int CELL_HEIGHT, const int CELL_GAP) 
 	: mRows(boardDetails.rows), mCols(boardDetails.cols), mBombs(boardDetails.bombs), mState(FIRST_CELL), mBoard(nullptr) {
 
+	//load font
+    const int FONT_SIZE = 30;
+    TTF_Font* font = loadFont(FONT_SIZE);
+
+    //Define colours for all 9 numbers (0-8) (for the board)
+    const int MAX_NUMBERS = 9;
+    const SDL_Color COLOUR_OF_NUMBERS[MAX_NUMBERS] =
+    {{  0,   0,   0,  0},  //0 = Nothing (wont be used but kept to make index make more sense)
+    { 20,  57, 168, 255},  //1 = BLUE
+    { 20, 148,  18, 255},  //2 = GREEN
+    {179,  30,  30, 255},  //3 = RED
+    {103,  28, 173, 255},  //4 = PURPLE
+    {133,  20,  20, 255},  //5 = MAROON
+    {  9, 179, 164, 255},  //6 = TURQUOISE
+    {  0,   0,   0, 255},  //7 = BLACK
+    {255, 255, 255, 255}}; //8 = WHITE
+
+    //Load textures for all 9 numbers (0-8)
+    //Skip 0 since it does not have a texture (default nullptr)
+    for (int i = 1; i < MAX_NUMBERS; ++i) {
+        Cell::sTextureOfNumbers[i] = loadTexture(renderer, font, COLOUR_OF_NUMBERS[i], std::to_string(i).c_str());
+    }
+
+    //Close font
+    TTF_CloseFont(font);
+    font = nullptr;
+
+    //Set Cell flag and bomb textures
+    Cell::sFlagTexture = loadTexture(renderer, "assets/flag.bmp");
+    Cell::sBombTexture = loadTexture(renderer, "assets/bomb.bmp");
+
+    //Set Cell colours
+    Cell::sCOLOUR = {158, 158, 158, 255}; //DARK GREY
+    Cell::sPRESSED_COLOUR = {209, 209, 209, 255}; //LIGHT GREY
+	
 	//Create array on the heap
 	mBoard = new Cell[mRows * mCols];
 	
@@ -181,5 +216,17 @@ void Board::render(SDL_Renderer* renderer) {
 }
 
 Board::~Board() {
+	//Delete board
 	delete[] mBoard;
+
+	//Destroy textures
+    SDL_DestroyTexture(Cell::sFlagTexture);
+    SDL_DestroyTexture(Cell::sBombTexture);
+    Cell::sFlagTexture = nullptr;
+    Cell::sBombTexture = nullptr;
+
+    for (auto& texture : Cell::sTextureOfNumbers) {
+        SDL_DestroyTexture(texture);
+        texture = nullptr;
+    }
 }

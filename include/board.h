@@ -35,7 +35,7 @@ class Board {
         void openBoard(const int row, const int col, HUD& hud);
 
     public:
-        Board(const BoardDetails& boardDetails, const int START_X, const int START_Y, const int CELL_WIDTH, const int CELL_HEIGHT, const int CELL_GAP);
+        Board(SDL_Renderer* renderer, const BoardDetails& boardDetails, const int START_X, const int START_Y, const int CELL_WIDTH, const int CELL_HEIGHT, const int CELL_GAP);
         void handleMouseDown(const SDL_Event& event, HUD& hud, bool& renderFlag);
         void render(SDL_Renderer* renderer);
         ~Board();
