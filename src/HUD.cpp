@@ -27,8 +27,7 @@ HUD::HUD(SDL_Renderer* renderer, SDL_Texture* menuButtonTexture, SDL_Texture* re
     fraction = 0.25;
     width = round(TOTAL_WIDTH_REMAINING * fraction);
     rect = {x, y, width, HUD_HEIGHT};
-    int fontSize = 25;
-    mFlagCounter = FlagCounter(STARTING_FLAG_COUNT, renderer, fontSize, rect, UI_ELEMENT_COLOUR);
+    mFlagCounter = FlagCounter(STARTING_FLAG_COUNT, renderer, rect, UI_ELEMENT_COLOUR);
     x += width + HUD_GAP;
 
     fraction = 0.25;
@@ -57,6 +56,5 @@ void HUD::render(SDL_Renderer* renderer) {
 }
 
 HUD::~HUD() {
-    //Free textures in flag counter
     mFlagCounter.free();
 }
