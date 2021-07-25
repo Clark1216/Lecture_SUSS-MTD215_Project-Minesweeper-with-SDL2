@@ -5,14 +5,12 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 
-#include "loadTexture.h"
 #include "boardDetails.h"
-#include "cell.h"
 #include "menu.h"
 #include "HUD.h"
 #include "board.h"
 
-enum GameState {MENU, BOARD, EXIT};
+enum GameState {MENU, BOARD, RESET, EXIT};
 
 class Minesweeper {
     private:
