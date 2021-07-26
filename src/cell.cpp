@@ -2,6 +2,7 @@
 
 SDL_Color Cell::sCOLOUR = {0, 0, 0, 0};
 SDL_Color Cell::sPRESSED_COLOUR = {0, 0, 0, 0};
+SDL_Color Cell::sMARK_COLOUR = {0, 0, 0 , 0};
 
 SDL_Texture* Cell::sTextureOfNumbers[NUMBER_COUNT] = {};
 SDL_Texture* Cell::sFlagTexture = nullptr;
@@ -62,4 +63,9 @@ bool Cell::isOpen() {
 
 bool Cell::getFlag() {
     return mFlag;
+}
+
+//Mark the cell by changing it's colour to the marked colour
+void Cell::mark() {
+    changeColourTo(sMARK_COLOUR);
 }

@@ -9,6 +9,7 @@ class Cell : public Button {
     public:
         static SDL_Color sCOLOUR;
         static SDL_Color sPRESSED_COLOUR;
+        static SDL_Color sMARK_COLOUR;
 
         static SDL_Texture* sTextureOfNumbers[NUMBER_COUNT];
         static SDL_Texture* sFlagTexture;
@@ -25,7 +26,7 @@ class Cell : public Button {
     public:
         Cell();
         Cell(const SDL_Rect& rect);
-        
+
         //Setters
         void plantBomb();
         void plantNumber(const int number);
@@ -37,4 +38,7 @@ class Cell : public Button {
         bool bombPlanted();
         bool numberPlanted();
         bool getFlag();
+
+        //Other
+        void mark();
 };
