@@ -40,10 +40,10 @@ void Timer::updateTextures() {
     }
 
     //Convert timer into 3 digits
-    const int digit1 = mTimeElapsed / 100;
-    const int digit2 = mTimeElapsed / 10;
-    const int digit3 = mTimeElapsed % 10;
-
+    int digit1 = mTimeElapsed / 100;
+    int digit2 = mTimeElapsed / 10 % 10;
+    int digit3 = mTimeElapsed % 10;
+    
     //Query the texture for rect
     mFirstDigitTexture = mDigitTextures[digit1];
     SDL_QueryTexture(mFirstDigitTexture, NULL, NULL, &mFirstDigitRect.w, &mFirstDigitRect.h);
