@@ -174,7 +174,7 @@ void Board::handleMouseDown(const SDL_Event& event, HUD& hud, bool& render) {
 			int mouseX, mouseY;
 			SDL_GetMouseState(&mouseX, &mouseY);
 			Cell& cell = mBoard[getIndex(row, col)];
-			if (cell.isMouseInside(mouseX, mouseY)) {
+			if (!cell.isOpen() && cell.isMouseInside(mouseX, mouseY)) {
 				//Handle left mouse click
 				if (event.button.button == SDL_BUTTON_LEFT && !cell.getFlag()) {
 					cell.open();
@@ -209,16 +209,14 @@ void Board::handleMouseDown(const SDL_Event& event, HUD& hud, bool& render) {
 				} 
 				//Handle right mouse click
 				else if (event.button.button == SDL_BUTTON_RIGHT) {
-					if (!cell.isOpen()) {
-						//If counter is greater than 0...
-						//... or if counter is equal to 0 and a flag is set
-						if (hud.mFlagCounter.getCounter() > 0 || hud.mFlagCounter.getCounter() == 0 && cell.getFlag()) {
-							//If flag was set, decrement flag count, else increment flag count#
-							cell.setFlag() ? hud.mFlagCounter.decrementCounter() : hud.mFlagCounter.incrementCounter();
-							
-							render = true;
-							return;
-						}
+					//If counter is greater than 0...
+					//... or if counter is equal to 0 and a flag is set
+					if (hud.mFlagCounter.getCounter() > 0 || hud.mFlagCounter.getCounter() == 0 && cell.getFlag()) {
+						//If flag was set, decrement flag count, else increment flag count#
+						cell.setFlag() ? hud.mFlagCounter.decrementCounter() : hud.mFlagCounter.incrementCounter();
+						
+						render = true;
+						return;
 					}
 				}
 			}
