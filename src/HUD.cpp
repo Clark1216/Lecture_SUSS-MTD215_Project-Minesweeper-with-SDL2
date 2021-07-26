@@ -35,7 +35,7 @@ HUD::HUD(SDL_Renderer* renderer, const int SCREEN_WIDTH, const int HUD_HEIGHT, c
     fraction = 0.25;
     width = round(TOTAL_WIDTH_REMAINING * fraction);
     rect = {x, y, width, HUD_HEIGHT};
-    mTimer = UI_element(rect, UI_ELEMENT_COLOUR);
+    mTimer = Timer(renderer, rect, UI_ELEMENT_COLOUR);
     x += width + HUD_GAP;
 
     fraction = 0.25;
@@ -64,6 +64,14 @@ void HUD::handleMouseDown(SDL_Event& event, const std::function<void()>& handleM
     }
 }
 
+void HUD::startTimer() {
+    mTimer.start();
+}
+
+bool HUD::updateTimer() {
+    return mTimer.update();
+}
+
 void HUD::render(SDL_Renderer* renderer) {
     mMenuButton.render(renderer);
     mTimer.render(renderer);
@@ -73,6 +81,7 @@ void HUD::render(SDL_Renderer* renderer) {
 
 HUD::~HUD() {
     mMenuButton.free();
-    mResetButton.free();
+    mTimer.free();
     mFlagCounter.free();
+    mResetButton.free();
 }
