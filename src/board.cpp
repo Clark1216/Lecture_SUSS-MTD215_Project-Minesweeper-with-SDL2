@@ -199,7 +199,7 @@ void Board::handleMouseDown(const SDL_Event& event, HUD& hud, bool& render) {
 					}
 
 					//Winning condition
-					if (mCellsOpened == mCellsToOpen) {
+					if (mCellsOpened == mCellsToOpen && mState != LOSE) {
 						mState = WIN;
 						hud.mTimer.stop("GREEN");
 					}
