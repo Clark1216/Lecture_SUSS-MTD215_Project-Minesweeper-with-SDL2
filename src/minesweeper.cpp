@@ -136,6 +136,9 @@ void Minesweeper::boardLoop() {
         mGameState = RESET;
     };
 
+    //Start timer
+    hud.startTimer();
+
     //Set loop variables
     SDL_Event event;
     bool renderFlag= true;
@@ -155,6 +158,10 @@ void Minesweeper::boardLoop() {
                 hud.handleMouseDown(event, handleMenuEvent, handleResetEvent);
             }
         }
+        
+        //Update timer if it has changed;
+        if (hud.updateTimer())
+            renderFlag = true;
 
         if (renderFlag) {
             //Clear screen
