@@ -24,7 +24,7 @@ FlagCounter::FlagCounter(const int initialCount, SDL_Renderer* renderer, const S
     TTF_Font* font = loadFont(FONT_SIZE);
     const SDL_Color FONT_COLOUR = {204, 4, 4, 255}; //Red
 
-    //Load textures for numbers for flag counter and timer
+    //Load textures for numbers for flag counter
     for (int i = 0; i < NUMBER_OF_DIGITS; ++i) {
         mDigitTextures[i] = loadTexture(renderer, font, FONT_COLOUR, std::to_string(i).c_str());
     }
