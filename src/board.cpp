@@ -1,7 +1,9 @@
 #include "board.h"
 
 Board::Board(SDL_Renderer* renderer, const BoardDetails& boardDetails, const int START_X, const int START_Y, const int CELL_WIDTH, const int CELL_HEIGHT, const int CELL_GAP) 
-	: mRows(boardDetails.rows), mCols(boardDetails.cols), mBombs(boardDetails.bombs), mState(FIRST_CELL), mBoard(nullptr) {
+	: mRows(boardDetails.rows), mCols(boardDetails.cols), mBombs(boardDetails.bombs), 
+	mCellsOpened(0), mCellsToOpen(boardDetails.rows * boardDetails.cols - boardDetails.bombs),
+	mState(FIRST_CELL), mBoard(nullptr) {
 
 	//load font
     const int FONT_SIZE = 30;
@@ -37,6 +39,7 @@ Board::Board(SDL_Renderer* renderer, const BoardDetails& boardDetails, const int
     //Set Cell colours
     Cell::sCOLOUR = {158, 158, 158, 255}; //DARK GREY
     Cell::sPRESSED_COLOUR = {209, 209, 209, 255}; //LIGHT GREY
+	Cell::sMARK_COLOUR = {232, 16, 5, 255}; //RED
 	
 	//Create array on the heap
 	mBoard = new Cell[mRows * mCols];
@@ -151,6 +154,7 @@ void Board::openBoard(const int row, const int col, HUD& hud) {
 				return;
 			else {
 				tempCell.open();
+				mCellsOpened++;
 				if (tempCell.getFlag()) {
 					//Remove flag
 					tempCell.setFlag();
@@ -166,46 +170,69 @@ void Board::openBoard(const int row, const int col, HUD& hud) {
 
 void Board::handleMouseDown(const SDL_Event& event, HUD& hud, bool& render) {
     forEachCell([&](const int row, const int col){
-        int mouseX, mouseY;
-        SDL_GetMouseState(&mouseX, &mouseY);
-        Cell& cell = mBoard[getIndex(row, col)];
-        if (cell.isMouseInside(mouseX, mouseY)) {
-            //Handle left mouse click
-            if (event.button.button == SDL_BUTTON_LEFT && !cell.getFlag()) {
-                cell.open();
-                if (mState == PLAYING) {
-                    if (cell.bombPlanted()) {
-                        mState = LOSE;
-                    } else if (!cell.numberPlanted()) {
-                        //Open neighboring cells if they do not have bombs or numbers
-                        openBoard(row, col, hud);
-                    }
-                } else if (mState == FIRST_CELL) {
-                    //Generate random bombs
-                    generateBombs(row, col);
-                    //Open neighboring cells
-                    openBoard(row, col, hud);
-                    mState = PLAYING;
-                }
-                render = true;
-				return;
-            } 
-            //Handle right mouse click
-            else if (event.button.button == SDL_BUTTON_RIGHT) {
-				if (!cell.isOpen()) {
-					//If counter is greater than 0...
-					//... or if counter is equal to 0 and a flag is set
-					if (hud.mFlagCounter.getCounter() > 0 || hud.mFlagCounter.getCounter() == 0 && cell.getFlag()) {
-						//If flag was set, decrement flag count, else increment flag count#
-						cell.setFlag() ? hud.mFlagCounter.decrementCounter() : hud.mFlagCounter.incrementCounter();
-						
-						render = true;
-						return;
+		if (mState != LOSE && mState != WIN) {
+			int mouseX, mouseY;
+			SDL_GetMouseState(&mouseX, &mouseY);
+			Cell& cell = mBoard[getIndex(row, col)];
+			if (cell.isMouseInside(mouseX, mouseY)) {
+				//Handle left mouse click
+				if (event.button.button == SDL_BUTTON_LEFT && !cell.getFlag()) {
+					cell.open();
+					mCellsOpened++;
+					if (mState == PLAYING) {
+						if (cell.bombPlanted()) {
+							//Mark current cell as red
+							mState = LOSE;
+							cell.mark();
+							revealBombs();
+							hud.mTimer.stop("RED");
+						} else if (!cell.numberPlanted()) {
+							//Open neighboring cells if they do not have bombs or numbers
+							openBoard(row, col, hud);
+						}
+					} else if (mState == FIRST_CELL) {
+						//Generate random bombs
+						generateBombs(row, col);
+						//Open neighboring cells
+						openBoard(row, col, hud);
+						mState = PLAYING;
+					}
+
+					//Winning condition
+					if (mCellsOpened == mCellsToOpen) {
+						mState = WIN;
+						hud.mTimer.stop("GREEN");
+					}
+
+					render = true;
+					return;
+				} 
+				//Handle right mouse click
+				else if (event.button.button == SDL_BUTTON_RIGHT) {
+					if (!cell.isOpen()) {
+						//If counter is greater than 0...
+						//... or if counter is equal to 0 and a flag is set
+						if (hud.mFlagCounter.getCounter() > 0 || hud.mFlagCounter.getCounter() == 0 && cell.getFlag()) {
+							//If flag was set, decrement flag count, else increment flag count#
+							cell.setFlag() ? hud.mFlagCounter.decrementCounter() : hud.mFlagCounter.incrementCounter();
+							
+							render = true;
+							return;
+						}
 					}
 				}
-            }
-        }
+			}
+		}
     });
+}
+
+void Board::revealBombs() {
+	forEachCell([&](const int row, const int col) {
+		Cell& cell = mBoard[getIndex(row, col)];
+		if (cell.bombPlanted() && !cell.isOpen()) {
+			cell.open();
+		}
+	});
 }
 
 void Board::render(SDL_Renderer* renderer) {

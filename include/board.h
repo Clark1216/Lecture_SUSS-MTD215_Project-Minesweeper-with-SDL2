@@ -21,6 +21,9 @@ class Board {
         int mRows;
         int mCols;
         int mBombs;
+
+        int mCellsOpened;
+        int mCellsToOpen;
         
         BoardState mState;
         Cell* mBoard;
@@ -33,6 +36,9 @@ class Board {
 
         void generateBombs(const int firstClickedRow, const int firstClickedCol);
         void openBoard(const int row, const int col, HUD& hud);
+
+        void revealBombs();
+        void handleWinCondition(HUD& hud);
 
     public:
         Board(SDL_Renderer* renderer, const BoardDetails& boardDetails, const int START_X, const int START_Y, const int CELL_WIDTH, const int CELL_HEIGHT, const int CELL_GAP);
