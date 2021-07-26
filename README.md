@@ -13,7 +13,7 @@ Minesweeper game made with SDL2 and compiled with mingw32-make
 1. Make sure mingw32 is installed and g++ and mingw32-make is added to path variables
 2. Download repository
 3. Locate Folder
-4. Do the following in a terminal
+4. Do the following in a terminal:
 ```
 mingw32-make
 cd bin 
