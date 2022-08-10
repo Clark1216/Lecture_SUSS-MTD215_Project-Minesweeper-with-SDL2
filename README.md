@@ -15,7 +15,7 @@ Minesweeper game made with SDL2 and compiled with mingw32-make
 3. Locate Folder
 4. Do the following in a terminal:
 ```
-cd bin 
 mingw32-make
+cd bin 
 ./minesweeper
 ```
